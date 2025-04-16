@@ -113,6 +113,10 @@
       background-color: #f44336;
       color: white;
     }
+    .warning-button {
+      background-color: #ff9800;
+      color: white;
+    }
     .editable {
       cursor: pointer;
       padding: 0.3rem;
@@ -184,6 +188,7 @@
         <h4>Datenverwaltung</h4>
         <button onclick="exportTodayToExcel()">📤 Tagesexport (.xlsx)</button>
         <button onclick="exportFullHistoryToExcel()">📋 Kompletter Export (.xlsx)</button>
+        <button onclick="confirmCheckinDataDeletion()" class="warning-button">🔄 Anmeldedaten zurücksetzen</button>
         <button onclick="confirmDataDeletion()" class="danger-button">🗑️ Alle Daten löschen</button>
       </div>
       
@@ -267,30 +272,23 @@
       <h3 id="participantInfoTitle">Teilnehmerdetails</h3>
       <div class="info-details">
         <table>
-          <tbody id="participantInfoTable">
-            <tr>
-              <td><strong>Adresse:</strong></td>
-              <td>
-                <input type="text" id="editAddress" class="edit-field">
-              </td>
-            </tr>
-            <tr>
-              <td><strong>Telefon:</strong></td>
-              <td>
-                <input type="text" id="editPhone" class="edit-field">
-              </td>
-            </tr>
-          </tbody>
+          <tbody id="participantInfoTable"></tbody>
         </table>
-        <button onclick="saveParticipantDetails()" style="margin-top: 1rem;">Speichern</button>
       </div>
+      <div id="participantEditFields" class="hidden">
+        <h4>Details bearbeiten</h4>
+        <label>Adresse: <input type="text" id="editAddress" class="edit-field"></label>
+        <label>Telefon: <input type="text" id="editPhone" class="edit-field"></label>
+        <button onclick="saveParticipantDetails()">Speichern</button>
+      </div>
+      <button id="editDetailsButton" onclick="toggleEditMode()">✏️ Details bearbeiten</button>
     </div>
   </div>
 
   <script>
     let currentUser = null;
-    let currentEditingKey = ''; // Speichert den aktuell bearbeiteten Teilnehmer
-    let participantDetails = {}; // Speichert zusätzliche Teilnehmerdaten
+    let participantDetails = {};
+    let currentEditingParticipant = null;
     
     let staffList = JSON.parse(localStorage.getItem('staffList')) || [
       { name: "DittmarJ", pass: "1234" },
@@ -310,7 +308,8 @@
     }
 
     function loadData() {
-      participantDetails = JSON.parse(localStorage.getItem('participantDetails')) || {};
+      const details = localStorage.getItem('participantDetails');
+      participantDetails = details ? JSON.parse(details) : {};
     }
 
     function sortParticipantsAlphabetically() {
@@ -342,7 +341,6 @@
       const rows = document.querySelectorAll('#participantTable tr');
       
       if (searchTerm === '') {
-        // Wenn Suchfeld leer ist, alle Teilnehmer anzeigen
         rows.forEach(row => {
           row.style.display = '';
         });
@@ -370,7 +368,6 @@
       const tbody = document.getElementById('staffTable');
       tbody.innerHTML = '';
       
-      // Sortiere Betreuer alphabetisch
       const sortedStaff = [...staffList].sort((a, b) => a.name.localeCompare(b.name));
       
       sortedStaff.forEach(staff => {
@@ -408,32 +405,77 @@
 
     function showParticipantInfo(firstname, lastname) {
       const key = `${firstname} ${lastname}`;
-      currentEditingKey = key;
       const details = participantDetails[key] || {};
+      const history = checkinHistory[key] || [];
+      currentEditingParticipant = key;
       
       document.getElementById('participantInfoTitle').textContent = `Details: ${firstname} ${lastname}`;
+      const tbody = document.getElementById('participantInfoTable');
+      tbody.innerHTML = '';
+      
+      // Basisinformationen
+      addInfoRow(tbody, 'Adresse', details.address || 'Nicht verfügbar');
+      addInfoRow(tbody, 'Telefon', details.phone || 'Nicht verfügbar');
+      addInfoRow(tbody, 'Darf alleine nach Hause', details.allowAlone ? 'Ja' : 'Nein');
+      addInfoRow(tbody, 'Bezahlt', details.paid ? 'Ja' : 'Nein');
+      
+      // Verlauf
+      if (history.length > 0) {
+        addInfoRow(tbody, 'Verlauf', '');
+        history.forEach(action => {
+          const actionText = action.status === 'in' 
+            ? `✅ Angemeldet durch ${action.by} um ${action.time}`
+            : action.status === 'out' 
+            ? `🚪 Abgemeldet durch ${action.by} um ${action.time}`
+            : `↩️ Zurückgesetzt durch ${action.by} um ${action.time}`;
+          addInfoRow(tbody, '', actionText);
+        });
+      } else {
+        addInfoRow(tbody, 'Verlauf', 'Keine Aktionen');
+      }
+      
+      // Bearbeitungsfelder vorbereiten
       document.getElementById('editAddress').value = details.address || '';
       document.getElementById('editPhone').value = details.phone || '';
+      document.getElementById('participantEditFields').classList.add('hidden');
+      document.getElementById('editDetailsButton').style.display = (currentUser === "DittmarJ") ? 'block' : 'none';
       
       document.getElementById('participantInfoModal').style.display = 'block';
+    }
+
+    function toggleEditMode() {
+      const editFields = document.getElementById('participantEditFields');
+      if (editFields.classList.contains('hidden')) {
+        editFields.classList.remove('hidden');
+        document.getElementById('editDetailsButton').textContent = '✖️ Bearbeitung abbrechen';
+      } else {
+        editFields.classList.add('hidden');
+        document.getElementById('editDetailsButton').textContent = '✏️ Details bearbeiten';
+      }
     }
 
     function saveParticipantDetails() {
       if (currentUser !== "DittmarJ") return;
       
-      const address = document.getElementById('editAddress').value.trim();
-      const phone = document.getElementById('editPhone').value.trim();
-      
-      if (!participantDetails[currentEditingKey]) {
-        participantDetails[currentEditingKey] = {};
+      const key = currentEditingParticipant;
+      if (!participantDetails[key]) {
+        participantDetails[key] = {};
       }
       
-      participantDetails[currentEditingKey].address = address;
-      participantDetails[currentEditingKey].phone = phone;
+      participantDetails[key].address = document.getElementById('editAddress').value.trim();
+      participantDetails[key].phone = document.getElementById('editPhone').value.trim();
       
       saveData();
-      closeParticipantInfoModal();
+      showParticipantInfo(...key.split(' '));
       renderTable();
+    }
+
+    function addInfoRow(tbody, label, value) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${label}</strong></td>
+        <td>${value}</td>`;
+      tbody.appendChild(tr);
     }
 
     function closeParticipantInfoModal() {
@@ -461,6 +503,17 @@
       }
     }
 
+    function confirmCheckinDataDeletion() {
+      if (currentUser !== "DittmarJ") return;
+      
+      if (confirm('Sollen alle Anmeldedaten zurückgesetzt werden? (Status wird auf "Nicht da" gesetzt)')) {
+        checkinHistory = {};
+        saveData();
+        renderTable();
+        alert('Anmeldedaten wurden zurückgesetzt!');
+      }
+    }
+
     function login() {
       const name = document.getElementById('loginName').value.trim();
       const pass = document.getElementById('loginPass').value.trim();
@@ -473,7 +526,6 @@
         document.getElementById('logoutButton').classList.remove('hidden');
         document.getElementById('welcome').textContent = `Eingeloggt als: ${name}`;
         
-        // Admin-Panel nur für DittmarJ anzeigen
         if (currentUser === "DittmarJ") {
           document.getElementById('adminPanel').classList.remove('hidden');
         } else {
@@ -515,7 +567,6 @@
       const confirmPass = document.getElementById('confirmPassword').value;
       const errorElement = document.getElementById('passwordError');
       
-      // Validierung
       if (!oldPass || !newPass || !confirmPass) {
         errorElement.textContent = 'Bitte alle Felder ausfüllen!';
         return;
@@ -531,20 +582,17 @@
         return;
       }
       
-      // Aktuellen Benutzer finden
       const userIndex = staffList.findIndex(user => user.name === currentUser);
       if (userIndex === -1) {
         errorElement.textContent = 'Benutzer nicht gefunden!';
         return;
       }
       
-      // Altes Passwort überprüfen
       if (staffList[userIndex].pass !== oldPass) {
         errorElement.textContent = 'Das alte Passwort ist falsch!';
         return;
       }
       
-      // Passwort ändern
       staffList[userIndex].pass = newPass;
       saveData();
       
@@ -563,7 +611,7 @@
       const paid = document.getElementById('newParticipantPaid').checked;
       
       if (firstname && lastname) {
-        // Überprüfen ob Teilnehmer bereits existiert
+        const key = `${firstname} ${lastname}`;
         const exists = participantList.some(
           p => p.firstname.toLowerCase() === firstname.toLowerCase() && 
                p.lastname.toLowerCase() === lastname.toLowerCase()
@@ -571,7 +619,7 @@
         
         if (!exists) {
           participantList.push({ firstname, lastname });
-          const key = `${firstname} ${lastname}`;
+          
           participantDetails[key] = {
             address,
             phone,
@@ -579,7 +627,9 @@
             paid
           };
           
+          sortParticipantsAlphabetically();
           saveData();
+          
           // Felder leeren
           document.getElementById('newParticipantFirstname').value = '';
           document.getElementById('newParticipantLastname').value = '';
@@ -589,7 +639,6 @@
           document.getElementById('newParticipantPaid').checked = false;
           
           renderTable();
-          updateCounter();
           alert(`Teilnehmer ${firstname} ${lastname} wurde hinzugefügt.`);
         } else {
           alert('Dieser Teilnehmer existiert bereits!');
@@ -610,7 +659,6 @@
         const currentStatus = history.length > 0 ? history[history.length - 1].status : '';
         const details = participantDetails[key] || {};
         
-        // Buttons je nach Status und Benutzerrechten
         const showCheckIn = currentStatus !== 'in';
         const showCheckOut = currentStatus === 'in';
         const showReset = currentUser === "DittmarJ";
@@ -627,11 +675,11 @@
             ${showCheckOut ? `<button onclick="checkOut('${key}')">🚪 Abmelden</button>` : ''}
             ${showReset ? `<button onclick="resetStatus('${key}')">↩️ Zurücksetzen</button>` : ''}
           </td>
-          <td class="editable" onclick="if(currentUser === 'DittmarJ') toggleAlonePermission('${key}')">
+          <td onclick="if(currentUser === 'DittmarJ') toggleAlonePermission('${key}')" style="cursor: ${currentUser === 'DittmarJ' ? 'pointer' : 'default'}">
             <input type="checkbox" class="edit-checkbox" ${details.allowAlone ? 'checked' : ''} disabled>
             ${details.allowAlone ? 'Ja' : 'Nein'}
           </td>
-          <td class="editable" onclick="if(currentUser === 'DittmarJ') togglePaymentStatus('${key}')">
+          <td onclick="if(currentUser === 'DittmarJ') togglePaymentStatus('${key}')" style="cursor: ${currentUser === 'DittmarJ' ? 'pointer' : 'default'}">
             <input type="checkbox" class="edit-checkbox" ${details.paid ? 'checked' : ''} disabled>
             ${details.paid ? 'Ja' : 'Nein'}
           </td>
@@ -692,7 +740,6 @@
 
     function resetStatus(key) {
       if (currentUser === "DittmarJ") {
-        // Kompletten Verlauf für diesen Teilnehmer löschen
         checkinHistory[key] = [];
         saveData();
         renderTable();
@@ -706,7 +753,6 @@
       const pass = document.getElementById('newStaffPass').value.trim();
       
       if (name && pass) {
-        // Überprüfen ob Betreuer bereits existiert
         const exists = staffList.some(staff => staff.name.toLowerCase() === name.toLowerCase());
         
         if (!exists) {
@@ -732,7 +778,6 @@
         ['Nachname', 'Vorname', 'Status', 'Zeit', 'Betreuer', 'Darf alleine nach Hause', 'Bezahlt', 'Adresse', 'Telefon']
       ];
       
-      // Sammle alle heutigen Aktionen
       const today = new Date().toDateString();
       for (const [name, history] of Object.entries(checkinHistory)) {
         history.forEach(action => {
@@ -754,7 +799,6 @@
         });
       }
       
-      // Sortiere nach Zeit (neueste zuerst)
       data.sort((a, b) => {
         if (a[0] === 'Nachname') return -1;
         if (b[0] === 'Nachname') return 1;
@@ -774,7 +818,6 @@
         ['Nachname', 'Vorname', 'Aktion', 'Datum', 'Zeit', 'Betreuer', 'Darf alleine nach Hause', 'Bezahlt', 'Adresse', 'Telefon']
       ];
       
-      // Sammle alle Aktionen aller Teilnehmer
       for (const [name, history] of Object.entries(checkinHistory)) {
         const [firstname, lastname] = name.split(' ');
         const details = participantDetails[name] || {};
@@ -796,7 +839,6 @@
         });
       }
       
-      // Sortiere nach Datum/Zeit (neueste zuerst)
       data.sort((a, b) => {
         if (a[0] === 'Nachname') return -1;
         if (b[0] === 'Nachname') return 1;
@@ -832,7 +874,6 @@
       saveData();
     }
 
-    // Teilnehmerliste hochladen (nur für DittmarJ)
     document.getElementById('uploadParticipants').addEventListener('change', function(evt) {
       if (currentUser !== "DittmarJ") return;
       
@@ -854,7 +895,6 @@
           if (firstname && lastname) {
             participantList.push({ firstname, lastname });
             
-            // Speichere zusätzliche Details
             participantDetails[key] = {
               allowAlone: row['Darf alleine nach Hause'] === true || row['Darf alleine nach Hause'] === 'Ja',
               paid: row.Bezahlt === true || row.Bezahlt === 'Ja',
@@ -872,7 +912,6 @@
       reader.readAsBinaryString(file);
     });
 
-    // Initialen Zählerstand anzeigen
     if (participantList.length > 0) {
       loadData();
       updateCounter();
