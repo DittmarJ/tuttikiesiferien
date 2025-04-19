@@ -19,7 +19,8 @@ h1, h2, h3, h4 {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
+
 }
 
 button {
@@ -203,6 +204,17 @@ input[type="password"] {
   margin-top: 2rem; /* Optional: Abstand vom oberen Rand */
 }
 
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+#adminOnlyFields {
+  margin-bottom: 1rem; /* Abstand zum Kommentarfeld */
+}
+
   </style>
 </head>
 <body>
@@ -211,7 +223,7 @@ input[type="password"] {
     <button id="logoutButton" class="logout-btn hidden" onclick="logout()">Abmelden</button>
   </div>
 
-<div class="login" style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+<div class="login login-container">
   <h3>Bitte PIN eingeben:</h3>
   <input id="pinCodeInput" type="password" maxlength="6" readonly
     style="font-size: 1rem; text-align: center; width: 200px; padding: 0.5rem; border-radius: 8px; border: 1px solid #ccc;" />
@@ -354,18 +366,21 @@ input[type="password"] {
         <table>
           <tbody id="participantInfoTable"></tbody>
         </table>
-        <div id="editFields" style="margin-top: 1rem; display: none;">
-          <h4>Details bearbeiten</h4>
-          <label>Straße: <input type="text" id="editStreet" class="edit-field"></label>
-          <label>Ort: <input type="text" id="editCity" class="edit-field"></label>
-          <label>Telefon: <input type="text" id="editPhone" class="edit-field"></label>
-          <label>E-Mail: <input type="text" id="editEmail" class="edit-field"></label>
-		<label>Darf alleine nach Hause: <input type="text" id="editAllowAlone" class="edit-field"></label>
-		<label>Bezahlt: <input type="text" id="editPaid" class="edit-field"></label>
-		<label>Kommentare: <textarea id="editComments" class="edit-field" rows="3"></textarea></label>
-
-          <button onclick="saveParticipantDetails()" class="edit-button">Speichern</button>
-        </div>
+<div id="editFields" style="margin-top: 1rem; display: none;">
+  <h4>Details bearbeiten</h4>
+  <!-- Nur für Admin sichtbar -->
+  <div id="adminOnlyFields">
+    <label>Straße: <input type="text" id="editStreet" class="edit-field"></label>
+    <label>Ort: <input type="text" id="editCity" class="edit-field"></label>
+    <label>Telefon: <input type="text" id="editPhone" class="edit-field"></label>
+    <label>E-Mail: <input type="text" id="editEmail" class="edit-field"></label>
+    <label>Darf alleine nach Hause: <input type="text" id="editAllowAlone" class="edit-field"></label>
+    <label>Bezahlt: <input type="text" id="editPaid" class="edit-field"></label>
+  </div>
+  <!-- Für alle sichtbar -->
+  <label>Kommentare: <textarea id="editComments" class="edit-field" rows="3"></textarea></label>
+  <button onclick="saveParticipantDetails()" class="edit-button">Speichern</button>
+</div>
         <button id="editDetailsButton" onclick="toggleEditMode()" style="margin-top: 1rem;">Details bearbeiten</button>
       </div>
     </div>
@@ -532,7 +547,10 @@ input[type="password"] {
 		document.getElementById('editComments').value = details.comments || '';
       
 		document.getElementById('editFields').style.display = 'none';
-		document.getElementById('editDetailsButton').style.display = currentUser === "DittmarJ" ? 'block' : 'none';
+document.getElementById('editDetailsButton').style.display = 'block'; // Immer sichtbar
+// Zeige Admin-Felder nur für DittmarJ
+document.getElementById('adminOnlyFields').style.display = 
+  (currentUser === "DittmarJ") ? 'block' : 'none'; 
 		document.getElementById('editDetailsButton').textContent = 'Details bearbeiten';
       
       document.getElementById('participantInfoModal').style.display = 'block';
@@ -561,27 +579,25 @@ input[type="password"] {
       }
     }
 
-    function saveParticipantDetails() {
-      if (currentUser !== "DittmarJ") return;
-      
-      const key = currentEditingParticipant;
-      if (!participantDetails[key]) {
-        participantDetails[key] = {};
-      }
-      
-      participantDetails[key].address = document.getElementById('editStreet').value;
-      participantDetails[key].city = document.getElementById('editCity').value;
-      participantDetails[key].phone = document.getElementById('editPhone').value;
-      participantDetails[key].email = document.getElementById('editEmail').value;
-		participantDetails[key].allowAlone = document.getElementById('editAllowAlone').value;
-		participantDetails[key].paid = document.getElementById('editPaid').value;
-		participantDetails[key].comments = document.getElementById('editComments').value;
+function saveParticipantDetails() {
+  const key = currentEditingParticipant;
+  if (!participantDetails[key]) participantDetails[key] = {};
 
-      
-      saveData();
-      showParticipantInfo(key.split(' ')[0], key.split(' ')[1]);
-      renderTable();
-    }
+  // Nur Admins dürfen Nicht-Kommentar-Felder speichern
+  if (currentUser === "DittmarJ") {
+    participantDetails[key].address = document.getElementById('editStreet').value;
+    participantDetails[key].city = document.getElementById('editCity').value;
+    participantDetails[key].phone = document.getElementById('editPhone').value;
+    participantDetails[key].email = document.getElementById('editEmail').value;
+    participantDetails[key].allowAlone = document.getElementById('editAllowAlone').value;
+    participantDetails[key].paid = document.getElementById('editPaid').value;
+  }
+
+  // Kommentar darf jeder speichern
+  participantDetails[key].comments = document.getElementById('editComments').value;
+  saveData();
+  showParticipantInfo(key.split(' ')[0], key.split(' ')[1]); // Modal aktualisieren
+}
 
     function confirmDataDeletion() {
       if (currentUser !== "DittmarJ") return;
@@ -589,11 +605,8 @@ input[type="password"] {
       if (confirm('WARNUNG: Dies wird ALLE Daten löschen! Fortfahren?')) {
         localStorage.clear();
         staffList = [
-          { name: "DittmarJ", pass: "1234" },
-          { name: "SimonJ", pass: "1234" },
-          { name: "LehmannL", pass: "1234" },
-          { name: "KeilA", pass: "1234" },
-          { name: "LindemannL", pass: "1234" }
+          { name: "DittmarJ", pass: "240309" },
+          { name: "JeanetteS", pass: "1111" }
         ];
         participantList = [];
         checkinHistory = {};
