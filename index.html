@@ -692,14 +692,13 @@ function loginWithPin() {
 }
 
 
-    function logout() {
-      currentUser = null;
-      document.querySelector('.login').classList.remove('hidden');
-      document.getElementById('app').classList.add('hidden');
-      document.getElementById('logoutButton').classList.add('hidden');
-      document.getElementById('loginName').value = '';
-      document.getElementById('loginPass').value = '';
-    }
+function logout() {
+  currentUser = null;
+  document.querySelector('.login').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('logoutButton').classList.add('hidden');
+  clearPin(); // PIN-Eingabe zurücksetzen
+}
 
     function showChangePasswordModal() {
       document.getElementById('passwordModal').style.display = 'block';
