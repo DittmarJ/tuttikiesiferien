@@ -1,52 +1,1047 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Website im Aufbau</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>An- und Abmeldung für das Ferienprogramm</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      color: #333;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      text-align: center;
-    }
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f9fafb;
+  color: #333;
+  padding: 1rem;
+  line-height: 1.6;
+}
 
-    .container {
-      padding: 2rem;
-      background-color: white;
-      border: 2px dashed #ffa500;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
+h1, h2, h3, h4 {
+  color: #1f2937;
+}
 
-    h1 {
-      font-size: 2em;
-      margin-bottom: 0.5em;
-    }
+.hidden {
+  display: none;
+}
 
-    p {
-      font-size: 1.2em;
-      color: #666;
-    }
+button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
 
-    .emoji {
-      font-size: 3em;
-    }
+button:hover {
+  background-color: #2563eb;
+}
+
+.danger-button {
+  background-color: #ef4444;
+}
+
+.danger-button:hover {
+  background-color: #dc2626;
+}
+
+.logout-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: #fca5a5;
+  color: #000;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1rem;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+th, td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+thead {
+  background-color: #f3f4f6;
+}
+
+tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+tr:hover {
+  background-color: #eef2f7;
+}
+
+input[type="text"],
+input[type="password"] {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  margin: 0.25rem 0;
+  width: 100%;
+  max-width: 300px;
+  box-sizing: border-box;
+}
+
+.search-box {
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.counter-display {
+  background: #e0f2fe;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.admin-panel, .add-participant-form, .export-options, .change-password-form {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 10;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #ffffff;
+  margin: 2% auto;
+  padding: 2rem;
+  border-radius: 10px;
+  max-width: 900px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.close {
+  color: #999;
+  float: right;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.info-button {
+  background-color: #10b981;
+}
+
+.info-button:hover {
+  background-color: #059669;
+}
+
+.edit-button {
+  background-color: #3b82f6;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+}
+
+.edit-field {
+  width: 100%;
+  padding: 0.4rem;
+  margin: 0.2rem 0;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+}
+
+.highlight {
+  background-color: #fef08a;
+}
+
+.green {
+  background-color: #d1fae5; /* weiches Grün */
+  color: #065f46;
+  font-weight: bold;
+}
+
+.red {
+  background-color: #fee2e2; /* weiches Rot */
+  color: #991b1b;
+  font-weight: bold;
+}
+
+.info-details {
+  font-size: 0.8rem;
+}
+
+.warning {
+  color: #d97706;  /* Orange */
+  font-weight: bold;
+}
+
+.header-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  margin-top: 2rem; /* Optional: Abstand vom oberen Rand */
+}
+
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="emoji">🚧</div>
-    <h1>Diese Website befindet sich im Aufbau</h1>
-    <p>Schau bald wieder vorbei!</p>
+  <div class="header-container">
+<h1>An- und Abmeldung für das Ferienprogramm</h1>
+    <button id="logoutButton" class="logout-btn hidden" onclick="logout()">Abmelden</button>
   </div>
+
+<div class="login" style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+  <h3>Bitte PIN eingeben:</h3>
+  <input id="pinCodeInput" type="password" maxlength="6" readonly
+    style="font-size: 1rem; text-align: center; width: 200px; padding: 0.5rem; border-radius: 8px; border: 1px solid #ccc;" />
+
+  <div id="pinPad" style="display: grid; grid-template-columns: repeat(3, 80px); gap: 15px; justify-content: center;">
+    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('1')">1</button>
+    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('2')">2</button>
+    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('3')">3</button>
+    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('4')">4</button>
+    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('5')">5</button>
+    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('6')">6</button>
+    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('7')">7</button>
+    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('8')">8</button>
+    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('9')">9</button>
+    <button style="height: 60px; font-size: 1.5rem;" onclick="clearPin()">⟲</button>
+    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('0')">0</button>
+    <button style="height: 60px; font-size: 1.5rem;" onclick="loginWithPin()">✓</button>
+  </div>
+</div>
+
+
+  <div id="app" class="hidden">
+    <h2 id="welcome"></h2>
+    
+    <!-- Passwort ändern Button für alle Betreuer -->
+    <button onclick="showChangePasswordModal()">🔒 Passwort ändern</button>
+    
+    <!-- Admin Panel nur für DittmarJ -->
+    <div id="adminPanel" class="admin-panel hidden">
+      <h3>Admin-Bereich</h3>
+      <div>
+        <h4>Teilnehmerliste hochladen (XLSX)</h4>
+        <input type="file" id="uploadParticipants" accept=".xlsx" />
+      </div>
+      <div class="add-participant-form">
+        <h4>Teilnehmer manuell hinzufügen</h4>
+        <label>Nachname: <input id="newParticipantLastname" type="text" /></label>
+        <label>Vorname: <input id="newParticipantFirstname" type="text" /></label>
+        <label>Straße: <input id="newParticipantStreet" type="text" /></label>
+        <label>Ort: <input id="newParticipantCity" type="text" /></label>
+        <label>Telefon: <input id="newParticipantPhone" type="text" /></label>
+        <label>E-Mail: <input id="newParticipantEmail" type="text" /></label>
+        <label>Darf alleine nach Hause: <input id="newParticipantAlone" type="text" /></label>
+        <label>Bezahlt: <input id="newParticipantPaid" type="text" /></label>
+        <button onclick="addParticipant()">Teilnehmer hinzufügen</button>
+      </div>
+      <div>
+        <h4>Betreuer verwalten</h4>
+        <button onclick="showStaffManagement()">Betreuerliste anzeigen</button>
+      </div>
+      
+      <div class="export-options">
+        <h4>Datenverwaltung</h4>
+        <button onclick="exportTodayToExcel()">📤 Tagesexport (.xlsx)</button>
+        <button onclick="exportFullHistoryToExcel()">📋 Kompletter Export (.xlsx)</button>
+        <button onclick="confirmDataDeletion()" class="danger-button">🗑️ Alle Daten löschen</button>
+        <button onclick="confirmCheckinDataDeletion()" class="danger-button">♻️ Anmeldedaten zurücksetzen</button>
+      </div>
+      
+      <p><small>Daten werden im Browser gespeichert und nach 14 Tagen automatisch gelöscht.</small></p>
+    </div>
+
+    <!-- Zähler für angemeldete Kinder -->
+    <div class="counter-display">
+      Angemeldete Kinder: <span id="checkedInCounter">0</span> / <span id="totalParticipants">0</span>
+    </div>
+
+    <!-- Suchfunktion -->
+    <div>
+      <input type="text" id="searchInput" class="search-box" placeholder="Teilnehmer suchen..." oninput="searchParticipants()" />
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nachname</th>
+          <th>Vorname</th>
+          <th>Aktueller Status</th>
+          <th>Aktion</th>
+<th>Alleine gehen</th>
+          <th>Bezahlt</th>
+		<th>Kommentar</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody id="participantTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Passwort ändern Modal -->
+  <div id="passwordModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeChangePasswordModal()">&times;</span>
+      <h3>Passwort ändern</h3>
+      <div>
+        <label>Altes Passwort: <input type="password" id="oldPassword" /></label>
+      </div>
+      <div>
+        <label>Neues Passwort: <input type="password" id="newPassword" /></label>
+      </div>
+      <div>
+        <label>Neues Passwort bestätigen: <input type="password" id="confirmPassword" /></label>
+      </div>
+      <button onclick="changePassword()">Passwort ändern</button>
+      <p id="passwordError" style="color: red;"></p>
+    </div>
+  </div>
+
+  <!-- Betreuer verwalten Modal -->
+  <div id="staffModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeStaffModal()">&times;</span>
+      <h3>Betreuer verwalten</h3>
+      <div class="staff-list">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Aktion</th>
+            </tr>
+          </thead>
+          <tbody id="staffTable"></tbody>
+        </table>
+      </div>
+      <div>
+        <h4>Neuen Betreuer hinzufügen</h4>
+        <label>Name: <input id="newStaffName" /></label>
+        <label>Passwort: <input type="password" id="newStaffPass" /></label>
+        <button onclick="addStaff()">Hinzufügen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Teilnehmer-Details Modal -->
+  <div id="participantInfoModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeParticipantInfoModal()">&times;</span>
+      <h3 id="participantInfoTitle">Teilnehmerdetails</h3>
+      <div class="info-details">
+        <table>
+          <tbody id="participantInfoTable"></tbody>
+        </table>
+        <div id="editFields" style="margin-top: 1rem; display: none;">
+          <h4>Details bearbeiten</h4>
+          <label>Straße: <input type="text" id="editStreet" class="edit-field"></label>
+          <label>Ort: <input type="text" id="editCity" class="edit-field"></label>
+          <label>Telefon: <input type="text" id="editPhone" class="edit-field"></label>
+          <label>E-Mail: <input type="text" id="editEmail" class="edit-field"></label>
+		<label>Darf alleine nach Hause: <input type="text" id="editAllowAlone" class="edit-field"></label>
+		<label>Bezahlt: <input type="text" id="editPaid" class="edit-field"></label>
+		<label>Kommentare: <textarea id="editComments" class="edit-field" rows="3"></textarea></label>
+
+          <button onclick="saveParticipantDetails()" class="edit-button">Speichern</button>
+        </div>
+        <button id="editDetailsButton" onclick="toggleEditMode()" style="margin-top: 1rem;">Details bearbeiten</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let participantDetails = {};
+    let currentEditingParticipant = null;
+    
+    let staffList = JSON.parse(localStorage.getItem('staffList')) || [
+      { name: "DittmarJ", pass: "1234" },
+      { name: "SimonJ", pass: "1234" },
+      { name: "LehmannL", pass: "1234" },
+      { name: "KeilA", pass: "1234" },
+      { name: "LindemannL", pass: "1234" }
+    ];
+    let participantList = JSON.parse(localStorage.getItem('participantList')) || [];
+    let checkinHistory = JSON.parse(localStorage.getItem('checkinHistory')) || {};
+
+    function saveData() {
+      localStorage.setItem('participantList', JSON.stringify(participantList));
+      localStorage.setItem('staffList', JSON.stringify(staffList));
+      localStorage.setItem('checkinHistory', JSON.stringify(checkinHistory));
+      localStorage.setItem('participantDetails', JSON.stringify(participantDetails));
+    }
+
+    function loadData() {
+      participantDetails = JSON.parse(localStorage.getItem('participantDetails')) || {};
+    }
+
+    function sortParticipantsAlphabetically() {
+      participantList.sort((a, b) => {
+        const nameA = `${a.lastname} ${a.firstname}`.toLowerCase();
+        const nameB = `${b.lastname} ${b.firstname}`.toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+    }
+
+    function updateCounter() {
+      const total = participantList.length;
+      let checkedIn = 0;
+      
+      participantList.forEach(p => {
+        const key = `${p.firstname} ${p.lastname}`;
+        const history = checkinHistory[key] || [];
+        if (history.length > 0 && history[history.length - 1].status === 'in') {
+          checkedIn++;
+        }
+      });
+      
+      document.getElementById('checkedInCounter').textContent = checkedIn;
+      document.getElementById('totalParticipants').textContent = total;
+    }
+
+    function searchParticipants() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const rows = document.querySelectorAll('#participantTable tr');
+      
+      if (searchTerm === '') {
+        rows.forEach(row => {
+          row.style.display = '';
+        });
+        return;
+      }
+      
+      rows.forEach(row => {
+        const lastNameCell = row.querySelector('td:nth-child(1)');
+        const firstNameCell = row.querySelector('td:nth-child(2)');
+        
+        if (lastNameCell && firstNameCell) {
+          const lastName = lastNameCell.textContent.toLowerCase();
+          const firstName = firstNameCell.textContent.toLowerCase();
+          
+          if (lastName.includes(searchTerm) || firstName.includes(searchTerm)) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    function showStaffManagement() {
+      const tbody = document.getElementById('staffTable');
+      tbody.innerHTML = '';
+      
+      const sortedStaff = [...staffList].sort((a, b) => a.name.localeCompare(b.name));
+      
+      sortedStaff.forEach(staff => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${staff.name}</td>
+          <td>
+            <button onclick="removeStaff('${staff.name}')">Löschen</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+      
+      document.getElementById('staffModal').style.display = 'block';
+      document.getElementById('newStaffName').value = '';
+      document.getElementById('newStaffPass').value = '';
+    }
+
+    function closeStaffModal() {
+      document.getElementById('staffModal').style.display = 'none';
+    }
+
+    function removeStaff(name) {
+      if (currentUser !== "DittmarJ") return;
+      if (name === "DittmarJ") {
+        alert("Der Hauptadmin kann nicht gelöscht werden!");
+        return;
+      }
+      
+      if (confirm(`Soll der Betreuer ${name} wirklich gelöscht werden?`)) {
+        staffList = staffList.filter(staff => staff.name !== name);
+        saveData();
+        showStaffManagement();
+      }
+    }
+
+    function showParticipantInfo(firstname, lastname) {
+      const key = `${firstname} ${lastname}`;
+      const details = participantDetails[key] || {};
+      const history = checkinHistory[key] || [];
+      currentEditingParticipant = key;
+      
+      document.getElementById('participantInfoTitle').textContent = `Details: ${firstname} ${lastname}`;
+      const tbody = document.getElementById('participantInfoTable');
+      tbody.innerHTML = '';
+      
+      // Basisinformationen
+      addInfoRow(tbody, 'Straße', details.address || 'Nicht verfügbar');
+      addInfoRow(tbody, 'Ort', details.city || 'Nicht verfügbar');
+      addInfoRow(tbody, 'Telefon', details.phone || 'Nicht verfügbar');
+      addInfoRow(tbody, 'E-Mail', details.email || 'Nicht verfügbar');
+      addInfoRow(tbody, 'Darf alleine nach Hause', details.allowAlone || 'Nicht verfügbar');
+      addInfoRow(tbody, 'Bezahlt', details.paid || 'Nicht verfügbar');
+	addInfoRow(tbody, 'Kommentare', details.comments || 'Keine Kommentare');
+      
+      // Verlauf
+      if (history.length > 0) {
+        addInfoRow(tbody, 'Verlauf', '');
+        history.forEach(action => {
+          const actionText = action.status === 'in' 
+            ? `✅ Angemeldet durch ${action.by} um ${action.time}`
+            : action.status === 'out' 
+            ? `🚪 Abgemeldet durch ${action.by} um ${action.time}`
+            : `↩️ Zurückgesetzt durch ${action.by} um ${action.time}`;
+          addInfoRow(tbody, '', actionText);
+        });
+      } else {
+        addInfoRow(tbody, 'Verlauf', 'Keine Aktionen');
+      }
+      
+      // Bearbeitungsfelder vorbereiten
+      document.getElementById('editStreet').value = details.address || '';
+      document.getElementById('editCity').value = details.city || '';
+      document.getElementById('editPhone').value = details.phone || '';
+      document.getElementById('editEmail').value = details.email || '';
+		document.getElementById('editAllowAlone').value = details.allowAlone || '';
+		document.getElementById('editPaid').value = details.paid || '';
+		document.getElementById('editComments').value = details.comments || '';
+      
+		document.getElementById('editFields').style.display = 'none';
+		document.getElementById('editDetailsButton').style.display = currentUser === "DittmarJ" ? 'block' : 'none';
+		document.getElementById('editDetailsButton').textContent = 'Details bearbeiten';
+      
+      document.getElementById('participantInfoModal').style.display = 'block';
+    }
+
+    function addInfoRow(tbody, label, value) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${label}</strong></td>
+        <td>${value}</td>`;
+      tbody.appendChild(tr);
+    }
+
+    function closeParticipantInfoModal() {
+      document.getElementById('participantInfoModal').style.display = 'none';
+    }
+
+    function toggleEditMode() {
+      const editFields = document.getElementById('editFields');
+      if (editFields.style.display === 'none') {
+        editFields.style.display = 'block';
+        document.getElementById('editDetailsButton').textContent = 'Bearbeitung abbrechen';
+      } else {
+        editFields.style.display = 'none';
+        document.getElementById('editDetailsButton').textContent = 'Details bearbeiten';
+      }
+    }
+
+    function saveParticipantDetails() {
+      if (currentUser !== "DittmarJ") return;
+      
+      const key = currentEditingParticipant;
+      if (!participantDetails[key]) {
+        participantDetails[key] = {};
+      }
+      
+      participantDetails[key].address = document.getElementById('editStreet').value;
+      participantDetails[key].city = document.getElementById('editCity').value;
+      participantDetails[key].phone = document.getElementById('editPhone').value;
+      participantDetails[key].email = document.getElementById('editEmail').value;
+		participantDetails[key].allowAlone = document.getElementById('editAllowAlone').value;
+		participantDetails[key].paid = document.getElementById('editPaid').value;
+		participantDetails[key].comments = document.getElementById('editComments').value;
+
+      
+      saveData();
+      showParticipantInfo(key.split(' ')[0], key.split(' ')[1]);
+      renderTable();
+    }
+
+    function confirmDataDeletion() {
+      if (currentUser !== "DittmarJ") return;
+      
+      if (confirm('WARNUNG: Dies wird ALLE Daten löschen! Fortfahren?')) {
+        localStorage.clear();
+        staffList = [
+          { name: "DittmarJ", pass: "1234" },
+          { name: "SimonJ", pass: "1234" },
+          { name: "LehmannL", pass: "1234" },
+          { name: "KeilA", pass: "1234" },
+          { name: "LindemannL", pass: "1234" }
+        ];
+        participantList = [];
+        checkinHistory = {};
+        participantDetails = {};
+        saveData();
+        renderTable();
+        alert('Alle Daten wurden gelöscht!');
+      }
+    }
+
+    function confirmCheckinDataDeletion() {
+      if (currentUser !== "DittmarJ") return;
+      
+      if (confirm('Sollen alle Anmeldedaten zurückgesetzt werden? (Status wird auf "Nicht da" gesetzt)')) {
+        checkinHistory = {};
+        saveData();
+        renderTable();
+        alert('Anmeldedaten wurden zurückgesetzt!');
+      }
+    }
+
+    function login() {
+      const name = document.getElementById('loginName').value.trim();
+      const pass = document.getElementById('loginPass').value.trim();
+      const match = staffList.find(user => user.name === name && user.pass === pass);
+      
+      if (match) {
+        currentUser = name;
+        document.querySelector('.login').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        document.getElementById('logoutButton').classList.remove('hidden');
+        document.getElementById('welcome').textContent = `Eingeloggt als: ${name}`;
+        
+        if (currentUser === "DittmarJ") {
+          document.getElementById('adminPanel').classList.remove('hidden');
+        } else {
+          document.getElementById('adminPanel').classList.add('hidden');
+        }
+        
+        loadData();
+        renderTable();
+        cleanOldEntries();
+      } else {
+        alert('Falscher Name oder Passwort.');
+      }
+    }
+
+function loginWithPin() {
+  const pin = document.getElementById('pinCodeInput').value.trim();
+  const match = staffList.find(user => user.pass === pin);
+  
+  if (match) {
+    currentUser = match.name;
+    document.querySelector('.login').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('logoutButton').classList.remove('hidden');
+    document.getElementById('welcome').textContent = `Eingeloggt als: ${currentUser}`;
+    
+    if (currentUser === "DittmarJ") {
+      document.getElementById('adminPanel').classList.remove('hidden');
+    } else {
+      document.getElementById('adminPanel').classList.add('hidden');
+    }
+    
+    loadData();
+    renderTable();
+    cleanOldEntries();
+  } else {
+    alert('Falscher PIN-Code.');
+  }
+}
+
+
+    function logout() {
+      currentUser = null;
+      document.querySelector('.login').classList.remove('hidden');
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('logoutButton').classList.add('hidden');
+      document.getElementById('loginName').value = '';
+      document.getElementById('loginPass').value = '';
+    }
+
+    function showChangePasswordModal() {
+      document.getElementById('passwordModal').style.display = 'block';
+      document.getElementById('oldPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+      document.getElementById('passwordError').textContent = '';
+    }
+
+    function closeChangePasswordModal() {
+      document.getElementById('passwordModal').style.display = 'none';
+    }
+
+    function changePassword() {
+      const oldPass = document.getElementById('oldPassword').value;
+      const newPass = document.getElementById('newPassword').value;
+      const confirmPass = document.getElementById('confirmPassword').value;
+      const errorElement = document.getElementById('passwordError');
+      
+      if (!oldPass || !newPass || !confirmPass) {
+        errorElement.textContent = 'Bitte alle Felder ausfüllen!';
+        return;
+      }
+      
+      if (newPass !== confirmPass) {
+        errorElement.textContent = 'Die neuen Passwörter stimmen nicht überein!';
+        return;
+      }
+      
+      if (newPass.length < 4) {
+        errorElement.textContent = 'Das Passwort muss mindestens 4 Zeichen lang sein!';
+        return;
+      }
+      
+      const userIndex = staffList.findIndex(user => user.name === currentUser);
+      if (userIndex === -1) {
+        errorElement.textContent = 'Benutzer nicht gefunden!';
+        return;
+      }
+      
+      if (staffList[userIndex].pass !== oldPass) {
+        errorElement.textContent = 'Das alte Passwort ist falsch!';
+        return;
+      }
+      
+      staffList[userIndex].pass = newPass;
+      saveData();
+      
+      alert('Passwort erfolgreich geändert!');
+      closeChangePasswordModal();
+    }
+
+    function addParticipant() {
+      if (currentUser !== "DittmarJ") return;
+      
+      const lastname = document.getElementById('newParticipantLastname').value.trim();
+      const firstname = document.getElementById('newParticipantFirstname').value.trim();
+      const street = document.getElementById('newParticipantStreet').value.trim();
+      const city = document.getElementById('newParticipantCity').value.trim();
+      const phone = document.getElementById('newParticipantPhone').value.trim();
+      const email = document.getElementById('newParticipantEmail').value.trim();
+      const allowAlone = document.getElementById('newParticipantAlone').value.trim();
+      const paid = document.getElementById('newParticipantPaid').value.trim();
+      
+      if (lastname && firstname) {
+        const key = `${firstname} ${lastname}`;
+        const exists = participantList.some(
+          p => p.firstname.toLowerCase() === firstname.toLowerCase() && 
+               p.lastname.toLowerCase() === lastname.toLowerCase()
+        );
+        
+        if (!exists) {
+          participantList.push({ firstname, lastname });
+          
+          participantDetails[key] = {
+            address: street,
+            city: city,
+            phone: phone,
+            email: email,
+            allowAlone: allowAlone,
+            paid: paid
+          };
+          
+          saveData();
+          
+          // Felder leeren
+          document.getElementById('newParticipantLastname').value = '';
+          document.getElementById('newParticipantFirstname').value = '';
+          document.getElementById('newParticipantStreet').value = '';
+          document.getElementById('newParticipantCity').value = '';
+          document.getElementById('newParticipantPhone').value = '';
+          document.getElementById('newParticipantEmail').value = '';
+          document.getElementById('newParticipantAlone').value = '';
+          document.getElementById('newParticipantPaid').value = '';
+          
+          renderTable();
+          updateCounter();
+          alert(`Teilnehmer ${firstname} ${lastname} wurde hinzugefügt.`);
+        } else {
+          alert('Dieser Teilnehmer existiert bereits!');
+        }
+      } else {
+        alert('Bitte mindestens Vor- und Nachname eingeben.');
+      }
+    }
+
+function renderTable() {
+  sortParticipantsAlphabetically();
+  const tbody = document.getElementById('participantTable');
+  tbody.innerHTML = '';
+  
+  participantList.forEach(p => {
+    const key = `${p.firstname} ${p.lastname}`;
+    const history = checkinHistory[key] || [];
+    const currentStatus = history.length > 0 ? history[history.length - 1].status : '';
+    const details = participantDetails[key] || {};
+    
+    const showCheckIn = currentStatus !== 'in';
+    const showCheckOut = currentStatus === 'in';
+    const showReset = currentUser === "DittmarJ";
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.lastname}</td>
+      <td>${p.firstname}</td>
+      <td class="${currentStatus === 'in' ? 'green' : currentStatus === 'out' ? 'red' : ''}">
+        ${currentStatus === 'in' ? 'Angemeldet' : currentStatus === 'out' ? 'Abgemeldet' : 'Nicht da'}
+      </td>
+      <td>
+        ${showCheckIn ? `<button onclick="checkIn('${key}')">✅ Anmelden</button>` : ''}
+        ${showCheckOut ? `<button onclick="checkOut('${key}')">🚪 Abmelden</button>` : ''}
+        ${showReset ? `<button onclick="resetStatus('${key}')">↩️ Zurücksetzen</button>` : ''}
+      </td>
+      <td>${details.allowAlone || ''}</td>
+      <td>${details.paid || ''}</td>
+      <td class="${details.comments ? 'warning' : ''}">${details.comments ? '⚠️ Kommentar' : ''}</td>
+      <td><button class="info-button" onclick="showParticipantInfo('${p.firstname}', '${p.lastname}')">ℹ️ Info</button></td>`;
+    tbody.appendChild(tr);
+  });
+  
+  updateCounter();
+}
+
+    function addAction(key, status) {
+      const now = new Date();
+      const action = {
+        status,
+        time: now.toLocaleTimeString(),
+        by: currentUser,
+        date: now.toISOString(),
+        actionTime: now.getTime()
+      };
+      
+      if (!checkinHistory[key]) {
+        checkinHistory[key] = [];
+      }
+      checkinHistory[key].push(action);
+      saveData();
+      renderTable();
+    }
+
+    function checkIn(key) {
+      addAction(key, 'in');
+    }
+
+    function checkOut(key) {
+      addAction(key, 'out');
+    }
+
+    function resetStatus(key) {
+      if (currentUser === "DittmarJ") {
+        checkinHistory[key] = [];
+        saveData();
+        renderTable();
+      }
+    }
+
+    function addStaff() {
+      if (currentUser !== "DittmarJ") return;
+      
+      const name = document.getElementById('newStaffName').value.trim();
+      const pass = document.getElementById('newStaffPass').value.trim();
+      
+      if (name && pass) {
+        const exists = staffList.some(staff => staff.name.toLowerCase() === name.toLowerCase());
+        
+        if (!exists) {
+          staffList.push({ name, pass });
+          saveData();
+          document.getElementById('newStaffName').value = '';
+          document.getElementById('newStaffPass').value = '';
+          showStaffManagement();
+          alert(`Betreuer ${name} wurde hinzugefügt.`);
+        } else {
+          alert('Dieser Betreuer existiert bereits!');
+        }
+      } else {
+        alert('Bitte Name und Passwort eingeben.');
+      }
+    }
+
+    function exportTodayToExcel() {
+      if (currentUser !== "DittmarJ") return;
+      
+      const wb = XLSX.utils.book_new();
+      const data = [
+        ['Nachname', 'Vorname', 'Status', 'Zeit', 'Betreuer', 'Darf alleine nach Hause', 'Bezahlt', 'Straße', 'Ort', 'Telefon', 'E-Mail']
+      ];
+      
+      const today = new Date().toDateString();
+      for (const [name, history] of Object.entries(checkinHistory)) {
+        history.forEach(action => {
+          if (new Date(action.date).toDateString() === today) {
+            const [firstname, lastname] = name.split(' ');
+            const details = participantDetails[name] || {};
+            data.push([
+              lastname,
+              firstname,
+              getActionText(action),
+              action.time,
+              action.by,
+              details.allowAlone || '',
+              details.paid || '',
+              details.address || '',
+              details.city || '',
+              details.phone || '',
+              details.email || ''
+            ]);
+          }
+        });
+      }
+      
+      data.sort((a, b) => {
+        if (a[0] === 'Nachname') return -1;
+        if (b[0] === 'Nachname') return 1;
+        return new Date(b[3]) - new Date(a[3]);
+      });
+      
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, 'Heutiger Verlauf');
+      XLSX.writeFile(wb, `Checkin-Heute_${new Date().toLocaleDateString()}.xlsx`);
+    }
+
+    function exportFullHistoryToExcel() {
+      if (currentUser !== "DittmarJ") return;
+      
+      const wb = XLSX.utils.book_new();
+      const data = [
+        ['Nachname', 'Vorname', 'Aktion', 'Datum', 'Zeit', 'Betreuer', 'Darf alleine nach Hause', 'Bezahlt', 'Straße', 'Ort', 'Telefon', 'E-Mail']
+      ];
+      
+      for (const [name, history] of Object.entries(checkinHistory)) {
+        const [firstname, lastname] = name.split(' ');
+        const details = participantDetails[name] || {};
+        
+        history.forEach(action => {
+          const actionDate = new Date(action.date);
+          data.push([
+            lastname,
+            firstname,
+            getActionText(action),
+            actionDate.toLocaleDateString(),
+            action.time,
+            action.by,
+            details.allowAlone || '',
+            details.paid || '',
+            details.address || '',
+            details.city || '',
+            details.phone || '',
+            details.email || ''
+          ]);
+        });
+      }
+      
+      data.sort((a, b) => {
+        if (a[0] === 'Nachname') return -1;
+        if (b[0] === 'Nachname') return 1;
+        return new Date(b[3] + ' ' + b[4]) - new Date(a[3] + ' ' + a[4]);
+      });
+      
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, 'Kompletter Verlauf');
+      XLSX.writeFile(wb, `Checkin-Vollstaendig_${new Date().toLocaleDateString()}.xlsx`);
+    }
+
+    function getActionText(action) {
+      return action.status === 'in' 
+        ? 'Angemeldet'
+        : action.status === 'out' 
+        ? 'Abgemeldet'
+        : 'Zurückgesetzt';
+    }
+
+    function cleanOldEntries() {
+      const now = Date.now();
+      const twoWeeksAgo = now - 14 * 24 * 60 * 60 * 1000;
+      
+      for (const key in checkinHistory) {
+        checkinHistory[key] = checkinHistory[key].filter(
+          action => new Date(action.date).getTime() > twoWeeksAgo
+        );
+        
+        if (checkinHistory[key].length === 0) {
+          delete checkinHistory[key];
+        }
+      }
+      saveData();
+    }
+
+    // Teilnehmerliste hochladen (nur für DittmarJ)
+    document.getElementById('uploadParticipants').addEventListener('change', function(evt) {
+      if (currentUser !== "DittmarJ") return;
+      
+      const file = evt.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const workbook = XLSX.read(e.target.result, { type: 'binary' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(sheet);
+        
+        participantList = [];
+        participantDetails = {};
+        
+        data.forEach(row => {
+          const lastname = row.Nachname || row.lastname || '';
+          const firstname = row.Vorname || row.firstname || '';
+          const key = `${firstname} ${lastname}`;
+          
+          if (firstname && lastname) {
+            participantList.push({ firstname, lastname });
+            
+            participantDetails[key] = {
+              address: row.Straße || row.address || '',
+              city: row.Ort || row.city || '',
+              phone: row['Tel.'] || row.phone || '',
+              email: row.Email || row.email || '',
+              allowAlone: row['Darf alleine nach hause'] || '',
+              paid: row.bezahlt || row.paid || ''
+            };
+          }
+        });
+        
+        sortParticipantsAlphabetically();
+        saveData();
+        renderTable();
+        alert(`Es wurden ${participantList.length} Teilnehmer geladen.`);
+      };
+      reader.readAsBinaryString(file);
+    });
+
+    // Initialen Zählerstand anzeigen
+    if (participantList.length > 0) {
+      loadData();
+      updateCounter();
+    }
+
+function appendPin(digit) {
+  const input = document.getElementById('pinCodeInput');
+  if (input.value.length < 6) {
+    input.value += digit;
+  }
+}
+
+function clearPin() {
+  document.getElementById('pinCodeInput').value = '';
+}
+
+  </script>
 </body>
 </html>
