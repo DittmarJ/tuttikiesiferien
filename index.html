@@ -63,12 +63,14 @@ table {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  font-size: 0.9rem; /* Optional: Schrift etwas kleiner */
 }
 
 th, td {
   border-bottom: 1px solid #e5e7eb;
-  padding: 0.75rem;
+  padding: 0.5rem 0.5rem; /* Reduziertes Padding (oben/unten: 0.4rem, links/rechts: 0.75rem) */
   text-align: left;
+  line-height: 1; /* Engerer Zeilenabstand */
 }
 
 thead {
@@ -170,6 +172,14 @@ input[type="password"] {
   border-radius: 5px;
 }
 
+#editStreet, #editCity {
+  width: 50%;  /* Halbe Breite */
+}
+
+#editAllowAlone, #editPaid {
+  width: 25%;  /* Viertel Breite */
+}
+
 .highlight {
   background-color: #fef08a;
 }
@@ -188,6 +198,8 @@ input[type="password"] {
 
 .info-details {
   font-size: 0.8rem;
+  line-height: 1; /* Diese Zeile hinzufügen oder anpassen */
+}
 }
 
 .warning {
