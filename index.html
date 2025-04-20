@@ -73,6 +73,12 @@ th, td {
   line-height: 1; /* Engerer Zeilenabstand */
 }
 
+th.comment-column, td.comment-column {
+  width: 20px;
+  text-align: center;
+}
+
+
 thead {
   background-color: #f3f4f6;
 }
@@ -227,6 +233,17 @@ input[type="password"] {
   margin-bottom: 1rem; /* Abstand zum Kommentarfeld */
 }
 
+.comment-icon {
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+#commentContent {
+  white-space: pre-wrap; /* Behält Zeilenumbrüche bei */
+  line-height: 1.5;
+  font-size: 1rem;
+}
+
   </style>
 </head>
 <body>
@@ -309,18 +326,19 @@ input[type="password"] {
     </div>
 
     <table>
-      <thead>
-        <tr>
-          <th>Nachname</th>
-          <th>Vorname</th>
-          <th>Aktueller Status</th>
-          <th>Aktion</th>
-<th>Alleine gehen</th>
-          <th>Bezahlt</th>
-		<th>Kommentar</th>
-          <th>Details</th>
-        </tr>
-      </thead>
+	<thead>
+	  <tr>
+	    <th class="comment-column">Info</th>
+	    <th>Nachname</th>
+	    <th>Vorname</th>
+	    <th>Aktueller Status</th>
+	    <th>Aktion</th>
+	    <th>Alleine gehen</th>
+	    <th>Bezahlt</th>
+	    <th>Details</th>
+	  </tr>
+	</thead>
+
       <tbody id="participantTable"></tbody>
     </table>
   </div>
@@ -368,6 +386,21 @@ input[type="password"] {
       </div>
     </div>
   </div>
+	<!-- Kommentar-Only Modal -->
+	<div id="commentModal" class="modal">
+	  <div class="modal-content" style="max-width: 600px;">
+	    <span class="close" onclick="closeCommentModal()">&times;</span>
+	    <h3 id="commentTitle">Kommentar</h3>
+	    <div class="info-details">
+	      <div id="commentContent" style="padding: 1rem; background: #f8f9fa; border-radius: 5px;"></div>
+	    </div>
+	  </div>
+	</div>
+	
+	<!-- Teilnehmer-Details Modal -->
+	<div id="participantInfoModal" class="modal">
+	  [... bestehender Code bleibt unverändert ...]
+	</div>
 
   <!-- Teilnehmer-Details Modal -->
   <div id="participantInfoModal" class="modal">
@@ -821,21 +854,24 @@ function renderTable() {
     const showReset = currentUser === "DittmarJ";
     
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${p.lastname}</td>
-      <td>${p.firstname}</td>
-      <td class="${currentStatus === 'in' ? 'green' : currentStatus === 'out' ? 'red' : ''}">
-        ${currentStatus === 'in' ? 'Angemeldet' : currentStatus === 'out' ? 'Abgemeldet' : 'Nicht da'}
-      </td>
-      <td>
-        ${showCheckIn ? `<button onclick="checkIn('${key}')">✅ Anmelden</button>` : ''}
-        ${showCheckOut ? `<button onclick="checkOut('${key}')">🚪 Abmelden</button>` : ''}
-        ${showReset ? `<button onclick="resetStatus('${key}')">↩️ Zurücksetzen</button>` : ''}
-      </td>
-      <td>${details.allowAlone || ''}</td>
-      <td>${details.paid || ''}</td>
-      <td class="${details.comments ? 'warning' : ''}">${details.comments ? '⚠️ Kommentar' : ''}</td>
-      <td><button class="info-button" onclick="showParticipantInfo('${p.firstname}', '${p.lastname}')">ℹ️ Info</button></td>`;
+tr.innerHTML = `
+  <td class="comment-column">
+    ${details.comments ? '<span class="comment-icon" onclick="showCommentOnly(\'' + p.firstname + '\', \'' + p.lastname + '\')">⚠️</span>' : ''}
+  </td>
+  <td>${p.lastname}</td>
+  <td>${p.firstname}</td>
+	  <td class="${currentStatus === 'in' ? 'green' : currentStatus === 'out' ? 'red' : ''}">
+	    ${currentStatus === 'in' ? 'Angemeldet' : currentStatus === 'out' ? 'Abgemeldet' : 'Nicht da'}
+	  </td>
+	  <td>
+	    ${showCheckIn ? `<button onclick="checkIn('${key}')">✅ Anmelden</button>` : ''}
+	    ${showCheckOut ? `<button onclick="checkOut('${key}')">🚪 Abmelden</button>` : ''}
+	    ${showReset ? `<button onclick="resetStatus('${key}')">↩️ Zurücksetzen</button>` : ''}
+	  </td>
+	  <td>${details.allowAlone || ''}</td>
+	  <td>${details.paid || ''}</td>
+	  <td><button class="info-button" onclick="showParticipantInfo('${p.firstname}', '${p.lastname}')">ℹ️ Info</button></td>
+	`;
     tbody.appendChild(tr);
   });
   
@@ -1064,6 +1100,20 @@ function appendPin(digit) {
 
 function clearPin() {
   document.getElementById('pinCodeInput').value = '';
+}
+
+function showCommentOnly(firstname, lastname) {
+  const key = `${firstname} ${lastname}`;
+  const details = participantDetails[key] || {};
+  const comment = details.comments || 'Kein Kommentar hinterlegt.';
+
+  document.getElementById('commentTitle').textContent = `Kommentar zu ${firstname} ${lastname}`;
+  document.getElementById('commentContent').textContent = comment;
+  document.getElementById('commentModal').style.display = 'block';
+}
+
+function closeCommentModal() {
+  document.getElementById('commentModal').style.display = 'none';
 }
 
   </script>
