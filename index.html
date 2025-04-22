@@ -837,7 +837,6 @@ function renderTable() {
     const history = checkinHistory[key] || [];
     const currentStatus = history.length > 0 ? history[history.length - 1].status : '';
     const details = participantDetails[key] || {};
-    
     const showCheckIn = currentStatus !== 'in';
     const showCheckOut = currentStatus === 'in';
     const showReset = currentUser === "DittmarJ";
@@ -890,7 +889,12 @@ tr.innerHTML = `
     }
 
 	function checkOut(key) {
-	  openPickupModal(key);
+	  const details = participantDetails[key] || {};
+	  if (details.allowAlone && details.allowAlone.toLowerCase() === 'nein') {
+	    openPickupModal(key); // Modal öffnen, wenn "Nein" in "Alleine gehen"
+	  } else {
+	    addAction(key, 'out'); // Direkt abmelden, wenn "Ja" oder kein Eintrag
+	  }
 	}
 
     function resetStatus(key) {
