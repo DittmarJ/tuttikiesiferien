@@ -73,6 +73,12 @@ th, td {
   line-height: 1; /* Engerer Zeilenabstand */
 }
 
+th.comment-column, td.comment-column {
+  width: 20px;
+  text-align: center;
+}
+
+
 thead {
   background-color: #f3f4f6;
 }
@@ -140,8 +146,6 @@ input[type="password"] {
   border-radius: 10px;
   max-width: 900px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  max-height: 90vh;           /* NEU: maximale Höhe = 90% der Viewport-Höhe */
-  overflow-y: auto;           /* NEU: Scrollbar bei Überlauf */
 }
 
 .close {
@@ -229,18 +233,15 @@ input[type="password"] {
   margin-bottom: 1rem; /* Abstand zum Kommentarfeld */
 }
 
-.comment-button {
-  background: none;
-  border: none;
-  color: #d97706;
+.comment-icon {
   cursor: pointer;
-  padding: 0;
-  font-weight: bold;
-  text-decoration: underline;
+  font-size: 1.2rem;
 }
 
-.comment-button:hover {
-  color: #b45309;
+#commentContent {
+  white-space: pre-wrap; /* Behält Zeilenumbrüche bei */
+  line-height: 1.5;
+  font-size: 1rem;
 }
 
   </style>
@@ -319,24 +320,26 @@ input[type="password"] {
       Angemeldete Kinder: <span id="checkedInCounter">0</span> / <span id="totalParticipants">0</span>
     </div>
 
-    <!-- Suchfunktion -->
-    <div>
-      <input type="text" id="searchInput" class="search-box" placeholder="Teilnehmer suchen..." oninput="searchParticipants()" />
-    </div>
+	<!-- Suchfunktion -->
+	<div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1rem;">
+	  <input type="text" id="searchLastName" class="search-box" placeholder="Nach Nachname suchen..." oninput="searchParticipants()" />
+	  <input type="text" id="searchFirstName" class="search-box" placeholder="Nach Vorname suchen..." oninput="searchParticipants()" />
+	</div>
 
     <table>
-      <thead>
-        <tr>
-          <th>Nachname</th>
-          <th>Vorname</th>
-          <th>Aktueller Status</th>
-          <th>Aktion</th>
-<th>Alleine gehen</th>
-          <th>Bezahlt</th>
-		<th>Kommentar</th>
-          <th>Details</th>
-        </tr>
-      </thead>
+	<thead>
+	  <tr>
+	    <th class="comment-column">Info</th>
+	    <th>Nachname</th>
+	    <th>Vorname</th>
+	    <th>Aktueller Status</th>
+	    <th>Aktion</th>
+	    <th>Alleine gehen</th>
+	    <th>Bezahlt</th>
+	    <th>Details</th>
+	  </tr>
+	</thead>
+
       <tbody id="participantTable"></tbody>
     </table>
   </div>
@@ -385,6 +388,17 @@ input[type="password"] {
     </div>
   </div>
 
+<!-- Kommentar-Only Modal -->
+<div id="commentModal" class="modal">
+  <div class="modal-content" style="max-width: 600px;">
+    <span class="close" onclick="closeCommentModal()">&times;</span>
+    <h3 id="commentTitle">Kommentar</h3>
+    <div class="info-details">
+      <div id="commentContent" style="padding: 1rem; background: #f8f9fa; border-radius: 5px;"></div>
+    </div>
+  </div>
+</div>
+
   <!-- Teilnehmer-Details Modal -->
   <div id="participantInfoModal" class="modal">
     <div class="modal-content">
@@ -414,14 +428,6 @@ input[type="password"] {
     </div>
   </div>
 
-<div id="commentModal" class="modal">
-  <div class="modal-content" style="max-width: 500px;">
-    <span class="close" onclick="closeCommentModal()">&times;</span>
-    <h3>Kommentar</h3>
-    <div id="commentContent" style="padding: 1rem; background: #f9fafb; border-radius: 6px;"></div>
-  </div>
-</div>
-
   <script>
     let currentUser = null;
     let participantDetails = {};
@@ -430,10 +436,7 @@ input[type="password"] {
     
     let staffList = JSON.parse(localStorage.getItem('staffList')) || [
       { name: "DittmarJ", pass: "1234" },
-      { name: "SimonJ", pass: "1234" },
-      { name: "LehmannL", pass: "1234" },
-      { name: "KeilA", pass: "1234" },
-      { name: "LindemannL", pass: "1234" }
+      { name: "JeanetteS", pass: "1111" }
     ];
     let participantList = JSON.parse(localStorage.getItem('participantList')) || [];
     let checkinHistory = JSON.parse(localStorage.getItem('checkinHistory')) || {};
@@ -473,33 +476,26 @@ input[type="password"] {
       document.getElementById('totalParticipants').textContent = total;
     }
 
-    function searchParticipants() {
-      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-      const rows = document.querySelectorAll('#participantTable tr');
-      
-      if (searchTerm === '') {
-        rows.forEach(row => {
-          row.style.display = '';
-        });
-        return;
-      }
-      
-      rows.forEach(row => {
-        const lastNameCell = row.querySelector('td:nth-child(1)');
-        const firstNameCell = row.querySelector('td:nth-child(2)');
-        
-        if (lastNameCell && firstNameCell) {
-          const lastName = lastNameCell.textContent.toLowerCase();
-          const firstName = firstNameCell.textContent.toLowerCase();
-          
-          if (lastName.includes(searchTerm) || firstName.includes(searchTerm)) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
-        }
-      });
-    }
+	function searchParticipants() {
+	  const lastNameTerm = document.getElementById('searchLastName').value.toLowerCase();
+	  const firstNameTerm = document.getElementById('searchFirstName').value.toLowerCase();
+	  const rows = document.querySelectorAll('#participantTable tr');
+	  
+	  rows.forEach(row => {
+	    const lastNameCell = row.querySelector('td:nth-child(2)'); // Nachname ist jetzt Spalte 2
+	    const firstNameCell = row.querySelector('td:nth-child(3)'); // Vorname ist jetzt Spalte 3
+	    
+	    if (lastNameCell && firstNameCell) {
+	      const lastName = lastNameCell.textContent.toLowerCase();
+	      const firstName = firstNameCell.textContent.toLowerCase();
+	      
+	      const lastNameMatch = lastNameTerm === '' || lastName.includes(lastNameTerm);
+	      const firstNameMatch = firstNameTerm === '' || firstName.includes(firstNameTerm);
+	      
+	      row.style.display = (lastNameMatch && firstNameMatch) ? '' : 'none';
+	    }
+	  });
+	}
 
     function showStaffManagement() {
       const tbody = document.getElementById('staffTable');
@@ -559,7 +555,7 @@ input[type="password"] {
       addInfoRow(tbody, 'Bezahlt', details.paid || 'Nicht verfügbar');
 	addInfoRow(tbody, 'Kommentare', details.comments || 'Keine Kommentare');
 	addInfoRow(tbody, 'Abgeholt von', details.pickupBy || 'Nicht angegeben');
-      
+     
       // Verlauf
       if (history.length > 0) {
         addInfoRow(tbody, 'Verlauf', '');
@@ -847,25 +843,24 @@ function renderTable() {
     const showReset = currentUser === "DittmarJ";
     
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${p.lastname}</td>
-      <td>${p.firstname}</td>
-      <td class="${currentStatus === 'in' ? 'green' : currentStatus === 'out' ? 'red' : ''}">
-        ${currentStatus === 'in' ? 'Angemeldet' : currentStatus === 'out' ? 'Abgemeldet' : 'Nicht da'}
-      </td>
-      <td>
-        ${showCheckIn ? `<button onclick="checkIn('${key}')">✅ Anmelden</button>` : ''}
-        ${showCheckOut ? `<button onclick="checkOut('${key}')">🚪 Abmelden</button>` : ''}
-        ${showReset ? `<button onclick="resetStatus('${key}')">↩️ Zurücksetzen</button>` : ''}
-      </td>
-      <td>${details.allowAlone || ''}</td>
-      <td>${details.paid || ''}</td>
-<td>
-  ${details.comments ? 
-    `<span class="comment-link" onclick="showComment('${details.comments.replace(/'/g, "\\'")}')">⚠️ Kommentar</span>` : 
-    ''}
-</td>
-      <td><button class="info-button" onclick="showParticipantInfo('${p.firstname}', '${p.lastname}')">ℹ️ Info</button></td>`;
+tr.innerHTML = `
+  <td class="comment-column">
+    ${details.comments ? '<span class="comment-icon" onclick="showCommentOnly(\'' + p.firstname + '\', \'' + p.lastname + '\')">⚠️</span>' : ''}
+  </td>
+  <td>${p.lastname}</td>
+  <td>${p.firstname}</td>
+	  <td class="${currentStatus === 'in' ? 'green' : currentStatus === 'out' ? 'red' : ''}">
+	    ${currentStatus === 'in' ? 'Angemeldet' : currentStatus === 'out' ? 'Abgemeldet' : 'Nicht da'}
+	  </td>
+	  <td>
+	    ${showCheckIn ? `<button onclick="checkIn('${key}')">✅ Anmelden</button>` : ''}
+	    ${showCheckOut ? `<button onclick="checkOut('${key}')">🚪 Abmelden</button>` : ''}
+	    ${showReset ? `<button onclick="resetStatus('${key}')">↩️ Zurücksetzen</button>` : ''}
+	  </td>
+	  <td>${details.allowAlone || ''}</td>
+	  <td>${details.paid || ''}</td>
+	  <td><button class="info-button" onclick="showParticipantInfo('${p.firstname}', '${p.lastname}')">ℹ️ Info</button></td>
+	`;
     tbody.appendChild(tr);
   });
   
@@ -1096,6 +1091,16 @@ function clearPin() {
   document.getElementById('pinCodeInput').value = '';
 }
 
+function showCommentOnly(firstname, lastname) {
+  const key = `${firstname} ${lastname}`;
+  const details = participantDetails[key] || {};
+  const comment = details.comments || 'Kein Kommentar hinterlegt.';
+
+  document.getElementById('commentTitle').textContent = `Kommentar zu ${firstname} ${lastname}`;
+  document.getElementById('commentContent').textContent = comment;
+  document.getElementById('commentModal').style.display = 'block';
+}
+
 function closeCommentModal() {
   document.getElementById('commentModal').style.display = 'none';
 }
@@ -1110,24 +1115,6 @@ function closePickupModal() {
   document.getElementById('pickupModal').style.display = 'none';
   document.getElementById('pickupForm').reset();
   document.getElementById('otherPickupText').value = '';
-}
-
-function submitPickupForm() {
-  if (!pendingCheckoutKey) return;
-
-  const selected = document.querySelector('input[name="pickup"]:checked');
-  let pickupValue = selected ? selected.value : '';
-  if (pickupValue === 'Sonstige') {
-    const otherText = document.getElementById('otherPickupText').value.trim();
-    if (otherText) pickupValue += `: ${otherText}`;
-  }
-
-  if (!participantDetails[pendingCheckoutKey]) participantDetails[pendingCheckoutKey] = {};
-  participantDetails[pendingCheckoutKey].pickupBy = pickupValue;
-
-  saveData();
-  addAction(pendingCheckoutKey, 'out');
-  closePickupModal();
 }
 
 document.getElementById('pickupForm').addEventListener('submit', function (e) {
@@ -1149,13 +1136,22 @@ document.getElementById('pickupForm').addEventListener('submit', function (e) {
   closePickupModal();
 });
 
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+function submitPickupForm() {
+  if (!pendingCheckoutKey) return;
+
+  const selected = document.querySelector('input[name="pickup"]:checked');
+  let pickupValue = selected ? selected.value : '';
+  if (pickupValue === 'Sonstige') {
+    const otherText = document.getElementById('otherPickupText').value.trim();
+    if (otherText) pickupValue += `: ${otherText}`;
+  }
+
+  if (!participantDetails[pendingCheckoutKey]) participantDetails[pendingCheckoutKey] = {};
+  participantDetails[pendingCheckoutKey].pickupBy = pickupValue;
+
+  saveData();
+  addAction(pendingCheckoutKey, 'out');
+  closePickupModal();
 }
 
   </script>
@@ -1172,7 +1168,7 @@ function escapeHtml(text) {
       <label><input type="radio" name="pickup" value="Opa"> Opa</label><br>
       <label><input type="radio" name="pickup" value="Sonstige"> Sonstige:</label>
       <input type="text" id="otherPickupText" placeholder="z. B. Tante Lisa"><br><br>
-	<button type="button" onclick="submitPickupForm()">Bestätigen</button>
+		<button type="button" onclick="submitPickupForm()">Bestätigen</button>
     </form>
   </div>
 </div>
