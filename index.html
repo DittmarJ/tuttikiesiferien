@@ -1051,24 +1051,24 @@ tr.innerHTML = `
         participantList = [];
         participantDetails = {};
         
-        data.forEach(row => {
-          const lastname = row.Nachname || row.lastname || '';
-          const firstname = row.Vorname || row.firstname || '';
-          const key = `${firstname} ${lastname}`;
-          
-          if (firstname && lastname) {
-            participantList.push({ firstname, lastname });
-            
-            participantDetails[key] = {
-              address: row.Straße || row.address || '',
-              city: row.Ort || row.city || '',
-              phone: row['Tel.'] || row.phone || '',
-              email: row.Email || row.email || '',
-              allowAlone: row['Darf alleine nach hause'] || '',
-              paid: row.bezahlt || row.paid || ''
-            };
-          }
-        });
+		data.forEach(row => {
+		  const lastname = row.Name || row.Nachname || row.lastname || '';
+		  const firstname = row.Vorname || row.firstname || '';
+		  const key = `${firstname} ${lastname}`;
+		  
+		  if (firstname && lastname) {
+		    participantList.push({ firstname, lastname });
+		    
+		    participantDetails[key] = {
+		      address: row['Straße '] || row.Straße || row.address || '',
+		      city: row.Ort || row.city || '',
+		      phone: row['Tel.'] || row.Telefon || row.phone || '',
+		      email: row['E-Mail'] || row.Email || row.email || '',
+		      allowAlone: row['Darf alleine nach Hause'] || row.allowAlone || '',
+		      paid: row.Bezahlt || row.bezahlt || row.paid || ''
+		    };
+		  }
+		});
         
         sortParticipantsAlphabetically();
         saveData();
