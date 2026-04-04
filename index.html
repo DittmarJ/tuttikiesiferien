@@ -28,7 +28,6 @@
             margin: 0;
         }
         
-        /* Glassmorphism Core Styles */
         .glass-card {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(20px);
@@ -624,7 +623,7 @@
             <p id="no-participants-message-unified" class="text-center text-[#8e8e93] text-sm mt-4 hidden">Noch keine Teilnehmer vorhanden.</p>
         </div>
 
-        <!-- Family Selection Modal (für Familien-Anmeldung) -->
+        <!-- Family Selection Modal -->
         <div id="family-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
             <div class="modal-content p-5 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
                 <h3 id="family-modal-title" class="text-xl font-bold text-[#1d1d1f] mb-3">Familienmitglieder auswählen</h3>
@@ -637,12 +636,11 @@
             </div>
         </div>
 
-        <!-- Pickup for Family Modal (für Familien-Abmeldung mit Abholperson) -->
+        <!-- Pickup for Family Modal (vereinfacht - eine Abholperson für alle) -->
         <div id="pickup-family-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
-            <div class="modal-content p-5 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
-                <h3 class="text-xl font-bold text-[#1d1d1f] mb-3">Abholpersonen festlegen</h3>
-                <p class="text-[#6c6c70] mb-4">Die folgenden Kinder dürfen nicht alleine nach Hause. Bitte legen Sie für jedes eine Abholperson fest:</p>
-                <div id="pickup-family-list" class="space-y-3 mb-4 max-h-60 overflow-y-auto"></div>
+            <div class="modal-content p-5 w-full max-w-md mx-4">
+                <h3 class="text-xl font-bold text-[#1d1d1f] mb-3">Abholperson festlegen</h3>
+                <div id="pickup-family-list" class="mb-4"></div>
                 <div class="flex justify-end space-x-3">
                     <button id="cancel-pickup-family" class="glass-button px-4 py-2 rounded-button">Abbrechen</button>
                     <button id="confirm-pickup-family" class="glass-button-primary px-4 py-2 rounded-button">Bestätigen</button>
@@ -869,9 +867,9 @@
             var currentConfirmAction = null;
             
             // Family action variables
-            var pendingFamilyAction = null; // 'anmelden' or 'abmelden'
-            var familyMembersListData = []; // Array of {id, name, status, checked}
-            var pendingFamilyPickupMembers = []; // For family abmeldung pickup
+            var pendingFamilyAction = null;
+            var familyMembersListData = [];
+            var pendingFamilyPickupMembers = null; // Für die gemeinsame Abholperson
 
             // Local Storage Keys
             const LOCAL_STORAGE_USERS_KEY = 'ferienprogramm_users';
@@ -913,19 +911,16 @@
                 codeDisplay.textContent = '*'.repeat(enteredCode.length);
             }
 
-            // Get last name from full name
             function getLastName(fullName) {
                 const parts = fullName.split(' ');
                 return parts.slice(1).join(' ') || '';
             }
 
-            // Get first name from full name
             function getFirstName(fullName) {
                 const parts = fullName.split(' ');
                 return parts[0] || '';
             }
 
-            // Sort participants based on selected option
             function sortParticipants(participantsArray) {
                 const sortValue = sortSelect ? sortSelect.value : 'firstNameAsc';
                 const sorted = [...participantsArray];
@@ -1150,72 +1145,55 @@
                 });
             }
 
-            // Show pickup modal for family members
+            // Vereinfachte Pickup-Funktion für Familien (eine Abholperson für alle)
             function showPickupForFamily(selectedMembers) {
                 const membersNeedingPickup = selectedMembers.filter(m => !m.canGoHomeAlone);
                 if (membersNeedingPickup.length === 0) {
-                    // No pickup needed, directly execute
-                    executeFamilyActionWithPickup(selectedMembers, []);
+                    executeFamilyActionWithPickup(selectedMembers, null);
                     return;
                 }
                 
-                pendingFamilyPickupMembers = membersNeedingPickup.map(m => ({
-                    id: m.id,
-                    name: m.name,
-                    pickupPerson: ''
-                }));
+                const childNames = membersNeedingPickup.map(m => m.name).join(', ');
                 
-                renderPickupFamilyList();
-                pickupFamilyModal.classList.remove('hidden');
-            }
-            
-            function renderPickupFamilyList() {
-                pickupFamilyList.innerHTML = '';
-                pendingFamilyPickupMembers.forEach((member, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'pickup-for-family-item';
-                    div.innerHTML = `
-                        <p class="font-medium mb-2">${member.name}</p>
-                        <select data-index="${index}" class="pickup-family-select w-full p-2 rounded-button">
+                pickupFamilyList.innerHTML = `
+                    <div class="pickup-for-family-item">
+                        <p class="font-medium mb-3">Die folgenden Kinder dürfen nicht alleine nach Hause:</p>
+                        <p class="text-sm text-[#6c6c70] mb-4">${childNames}</p>
+                        <p class="font-medium mb-2">Abholperson für alle Kinder:</p>
+                        <select id="family-pickup-select" class="w-full p-2 rounded-button mb-2">
                             <option value="">Bitte wählen</option>
                             <option value="Mutter">Mutter</option>
                             <option value="Vater">Vater</option>
                             <option value="Oma">Oma</option>
                             <option value="Opa">Opa</option>
                             <option value="Geschwister">Geschwister</option>
-                            <option value="Sonstige">Sonstige</option>
+                            <option value="Sonstige">Sonstige (bitte angeben)</option>
                         </select>
-                        <div class="custom-pickup-family-container-${index} hidden mt-2">
-                            <input type="text" placeholder="Name" class="custom-pickup-family-input w-full p-2 rounded-button" data-index="${index}">
+                        <div id="family-custom-pickup-container" class="hidden mt-2">
+                            <input type="text" id="family-custom-pickup-input" placeholder="Name der abholenden Person" class="w-full p-2 rounded-button">
                         </div>
-                    `;
-                    pickupFamilyList.appendChild(div);
+                    </div>
+                `;
+                
+                const select = document.getElementById('family-pickup-select');
+                const customContainer = document.getElementById('family-custom-pickup-container');
+                const customInput = document.getElementById('family-custom-pickup-input');
+                
+                select.addEventListener('change', () => {
+                    if (select.value === 'Sonstige') {
+                        customContainer.classList.remove('hidden');
+                    } else {
+                        customContainer.classList.add('hidden');
+                    }
                 });
                 
-                // Add event listeners for selects
-                document.querySelectorAll('.pickup-family-select').forEach(select => {
-                    select.addEventListener('change', (e) => {
-                        const idx = parseInt(e.target.dataset.index);
-                        const customContainer = document.querySelector(`.custom-pickup-family-container-${idx}`);
-                        if (e.target.value === 'Sonstige') {
-                            customContainer.classList.remove('hidden');
-                        } else {
-                            customContainer.classList.add('hidden');
-                            pendingFamilyPickupMembers[idx].pickupPerson = e.target.value;
-                        }
-                    });
-                });
+                // Temporäre Speicherung der ausgewählten Mitglieder
+                pendingFamilyPickupMembers = selectedMembers;
                 
-                // Add event listeners for custom inputs
-                document.querySelectorAll('.custom-pickup-family-input').forEach(input => {
-                    input.addEventListener('input', (e) => {
-                        const idx = parseInt(e.target.dataset.index);
-                        pendingFamilyPickupMembers[idx].pickupPerson = e.target.value;
-                    });
-                });
+                pickupFamilyModal.classList.remove('hidden');
             }
             
-            function executeFamilyActionWithPickup(selectedMembers, pickupData) {
+            function executeFamilyActionWithPickup(selectedMembers, pickupPerson) {
                 let successCount = 0;
                 selectedMembers.forEach(member => {
                     const participantIndex = participants.findIndex(p => p.id === member.id);
@@ -1228,8 +1206,11 @@
                             successCount++;
                         } else if (pendingFamilyAction === 'abmelden' && p.status === 'signedIn') {
                             p.status = 'available';
-                            const pickupInfo = pickupData.find(pd => pd.id === member.id);
-                            p.pickedUpBy = pickupInfo ? pickupInfo.pickupPerson : (p.canGoHomeAlone ? 'Alleine nach Hause' : 'Unbekannt');
+                            if (pickupPerson) {
+                                p.pickedUpBy = pickupPerson;
+                            } else {
+                                p.pickedUpBy = p.canGoHomeAlone ? 'Alleine nach Hause' : 'Unbekannt';
+                            }
                             p.activityHistory.push({ 
                                 type: 'Abgemeldet', 
                                 time: new Date().toLocaleString('de-DE'), 
@@ -1259,47 +1240,46 @@
                 }
                 
                 if (pendingFamilyAction === 'abmelden') {
-                    // Check if any selected member needs pickup
-                    const needsPickup = selectedMembers.filter(m => !m.canGoHomeAlone);
-                    if (needsPickup.length > 0) {
+                    const needsPickup = selectedMembers.some(m => !m.canGoHomeAlone);
+                    if (needsPickup) {
                         familyModal.classList.add('hidden');
                         showPickupForFamily(selectedMembers);
                         return;
                     }
                 }
                 
-                executeFamilyActionWithPickup(selectedMembers, []);
+                executeFamilyActionWithPickup(selectedMembers, null);
                 familyModal.classList.add('hidden');
                 pendingFamilyAction = null;
                 familyMembersListData = [];
             }
             
             function confirmFamilyPickup() {
-                // Validate all pickups
-                let isValid = true;
-                pendingFamilyPickupMembers.forEach(member => {
-                    if (!member.pickupPerson || member.pickupPerson.trim() === '') {
-                        isValid = false;
-                    }
-                });
+                const select = document.getElementById('family-pickup-select');
+                let pickupPerson = select ? select.value : '';
                 
-                if (!isValid) {
-                    pickupFamilyMessage.textContent = 'Bitte legen Sie für alle Kinder eine Abholperson fest.';
+                if (pickupPerson === 'Sonstige') {
+                    const customInput = document.getElementById('family-custom-pickup-input');
+                    pickupPerson = customInput ? customInput.value.trim() : '';
+                    if (!pickupPerson) {
+                        pickupFamilyMessage.textContent = 'Bitte geben Sie den Namen der abholenden Person ein.';
+                        pickupFamilyMessage.classList.remove('hidden');
+                        return;
+                    }
+                } else if (!pickupPerson) {
+                    pickupFamilyMessage.textContent = 'Bitte wählen Sie eine Abholperson aus.';
                     pickupFamilyMessage.classList.remove('hidden');
                     return;
                 }
                 
                 pickupFamilyMessage.classList.add('hidden');
-                
-                // Get selected members from family modal
-                const selectedMembers = familyMembersListData.filter(m => m.checked);
-                executeFamilyActionWithPickup(selectedMembers, pendingFamilyPickupMembers);
+                executeFamilyActionWithPickup(pendingFamilyPickupMembers, pickupPerson);
                 
                 pickupFamilyModal.classList.add('hidden');
                 familyModal.classList.add('hidden');
                 pendingFamilyAction = null;
                 familyMembersListData = [];
-                pendingFamilyPickupMembers = [];
+                pendingFamilyPickupMembers = null;
             }
 
             function renderParticipantList() {
@@ -1312,7 +1292,6 @@
                     return p.name.toLowerCase().includes(searchTerm);
                 });
                 
-                // Sort participants
                 filtered = sortParticipants(filtered);
 
                 const signedCount = filtered.filter(p => p.status !== 'available').length;
@@ -1406,7 +1385,6 @@
             }
 
             function handleLogout() {
-                // Alle Screens korrekt zurücksetzen
                 if (mainContentScreen) mainContentScreen.classList.add('hidden');
                 if (adminContentScreen) adminContentScreen.classList.add('hidden');
                 if (unifiedParticipantContainer) unifiedParticipantContainer.classList.add('hidden');
@@ -1423,15 +1401,13 @@
                 currentLoggedInUserStatus = '';
                 if (messageBox) messageBox.classList.add('hidden');
                 
-                // Reset family action variables
                 pendingFamilyAction = null;
                 familyMembersListData = [];
-                pendingFamilyPickupMembers = [];
+                pendingFamilyPickupMembers = null;
                 
                 resetInactivityTimer();
             }
 
-            // Backup
             function createBackup(manual = false) {
                 const data = localStorage.getItem(LOCAL_STORAGE_PARTICIPANTS_KEY);
                 if (!data) return;
@@ -1449,7 +1425,6 @@
                 }
             }
 
-            // Inactivity Timer
             let inactivityTimer;
             const INACTIVITY_LIMIT = 2 * 60 * 1000;
             function resetInactivityTimer() {
@@ -1506,7 +1481,6 @@
                 const status = newUserStatusSelect?.value;
                 if (!name || !code) { showAdminMessage(addUserMessage, "Name und Code erforderlich", true); return; }
                 if (users.some(u => u.code === code)) { showAdminMessage(addUserMessage, "Code existiert", true); return; }
-                // Standardmäßig aktiv
                 users.push({ id: Date.now().toString(), username: name, code, status, active: true });
                 saveUsers();
                 showAdminMessage(addUserMessage, "Benutzer hinzugefügt", false);
@@ -1566,10 +1540,8 @@
                 }
             });
 
-            // Sort event listener
             sortSelect?.addEventListener('change', renderParticipantList);
 
-            // Family Modal Event Listeners
             cancelFamilyModal?.addEventListener('click', () => {
                 familyModal.classList.add('hidden');
                 pendingFamilyAction = null;
@@ -1578,20 +1550,20 @@
             
             confirmFamilyAction?.addEventListener('click', executeFamilyAction);
             
-            // Pickup Family Modal Event Listeners
             cancelPickupFamily?.addEventListener('click', () => {
                 pickupFamilyModal.classList.add('hidden');
-                pendingFamilyPickupMembers = [];
+                pendingFamilyPickupMembers = null;
                 pickupFamilyMessage.classList.add('hidden');
-                // Re-open family modal
                 familyModal.classList.remove('hidden');
             });
             
             confirmPickupFamily?.addEventListener('click', confirmFamilyPickup);
 
-            // Global click handler
+            // Global click handler for participant actions and info icons
             document.addEventListener('click', (e) => {
                 const target = e.target;
+                
+                // Participant action button
                 if (target.classList?.contains('participant-action-button')) {
                     const pid = target.dataset.id;
                     const action = target.dataset.action;
@@ -1600,18 +1572,15 @@
                     const p = participants[idx];
                     closeAllSwipedItems();
                     
-                    // Check for family members with same last name
                     const lastName = getLastName(p.name);
                     const familyMembers = participants.filter(part => 
                         part.id !== p.id && getLastName(part.name).toLowerCase() === lastName.toLowerCase()
                     );
                     
                     if (familyMembers.length > 0) {
-                        // Show family modal
                         const allFamily = [p, ...familyMembers];
                         showFamilyModal(lastName, action, allFamily);
                     } else {
-                        // Single action
                         if (action === 'anmelden' && p.status === 'available') {
                             p.status = 'signedIn';
                             p.pickedUpBy = '';
@@ -1637,44 +1606,47 @@
                         }
                     }
                     resetInactivityTimer();
-                } else if (target.classList?.contains('info-icon')) {
+                }
+                
+                // Info icon
+                else if (target.classList?.contains('info-icon')) {
                     const pid = target.dataset.id;
-                    currentParticipantInDetailsModal = participants.find(p => p.id === pid);
-                    if (currentParticipantInDetailsModal) {
-                        const parts = currentParticipantInDetailsModal.name.split(' ');
+                    const participant = participants.find(p => p.id === pid);
+                    if (participant) {
+                        const parts = participant.name.split(' ');
                         const first = parts.shift() || '';
                         const last = parts.join(' ') || '';
                         detailsFirstNameDisplay.textContent = first;
                         detailsLastNameDisplay.textContent = last;
-                        detailsStreetDisplay.textContent = currentParticipantInDetailsModal.noData ? '---' : (currentParticipantInDetailsModal.street || 'N/A');
-                        detailsCityDisplay.textContent = currentParticipantInDetailsModal.noData ? '---' : (currentParticipantInDetailsModal.city || 'N/A');
-                        detailsPhoneDisplay.textContent = currentParticipantInDetailsModal.noData ? '---' : (currentParticipantInDetailsModal.phone || 'N/A');
-                        detailsRegtypeDisplay.textContent = currentParticipantInDetailsModal.registrationType;
-                        detailsPaidDisplay.textContent = currentParticipantInDetailsModal.paid ? 'Ja' : 'Nein';
-                        detailsCanGoHomeAloneDisplay.textContent = currentParticipantInDetailsModal.canGoHomeAlone ? 'Ja' : 'Nein';
-                        detailsNoDataDisplay.textContent = currentParticipantInDetailsModal.noData ? 'Ja' : 'Nein';
+                        detailsStreetDisplay.textContent = participant.noData ? '---' : (participant.street || 'N/A');
+                        detailsCityDisplay.textContent = participant.noData ? '---' : (participant.city || 'N/A');
+                        detailsPhoneDisplay.textContent = participant.noData ? '---' : (participant.phone || 'N/A');
+                        detailsRegtypeDisplay.textContent = participant.registrationType;
+                        detailsPaidDisplay.textContent = participant.paid ? 'Ja' : 'Nein';
+                        detailsCanGoHomeAloneDisplay.textContent = participant.canGoHomeAlone ? 'Ja' : 'Nein';
+                        detailsNoDataDisplay.textContent = participant.noData ? 'Ja' : 'Nein';
                         
                         if (noDataWarningDetail) {
-                            if (currentParticipantInDetailsModal.noData) noDataWarningDetail.classList.remove('hidden');
+                            if (participant.noData) noDataWarningDetail.classList.remove('hidden');
                             else noDataWarningDetail.classList.add('hidden');
                         }
                         
-                        if (currentParticipantInDetailsModal.pickedUpBy) {
-                            detailsPickedUpBy.textContent = currentParticipantInDetailsModal.pickedUpBy;
+                        if (participant.pickedUpBy) {
+                            detailsPickedUpBy.textContent = participant.pickedUpBy;
                             detailsPickedUpByRow?.classList.remove('hidden');
                         } else detailsPickedUpByRow?.classList.add('hidden');
                         
                         detailsFirstNameInput.value = first;
                         detailsLastNameInput.value = last;
-                        detailsStreetInput.value = currentParticipantInDetailsModal.street || '';
-                        detailsCityInput.value = currentParticipantInDetailsModal.city || '';
-                        detailsPhoneInput.value = currentParticipantInDetailsModal.phone || '';
-                        detailsRegtypeSelect.value = currentParticipantInDetailsModal.registrationType;
-                        detailsPaidInput.checked = currentParticipantInDetailsModal.paid;
-                        detailsCanGoHomeAloneInput.checked = currentParticipantInDetailsModal.canGoHomeAlone;
-                        detailsNoDataInput.checked = currentParticipantInDetailsModal.noData || false;
+                        detailsStreetInput.value = participant.street || '';
+                        detailsCityInput.value = participant.city || '';
+                        detailsPhoneInput.value = participant.phone || '';
+                        detailsRegtypeSelect.value = participant.registrationType;
+                        detailsPaidInput.checked = participant.paid;
+                        detailsCanGoHomeAloneInput.checked = participant.canGoHomeAlone;
+                        detailsNoDataInput.checked = participant.noData || false;
                         
-                        const noDataActive = currentParticipantInDetailsModal.noData;
+                        const noDataActive = participant.noData;
                         if (detailsStreetInput) detailsStreetInput.disabled = noDataActive;
                         if (detailsCityInput) detailsCityInput.disabled = noDataActive;
                         if (detailsPhoneInput) detailsPhoneInput.disabled = noDataActive;
@@ -1683,8 +1655,8 @@
                         setAdminEditMode(isAdmin);
                         
                         detailsActivityHistory.innerHTML = '';
-                        if (currentParticipantInDetailsModal.activityHistory?.length) {
-                            currentParticipantInDetailsModal.activityHistory.forEach(h => {
+                        if (participant.activityHistory?.length) {
+                            participant.activityHistory.forEach(h => {
                                 const li = document.createElement('li');
                                 li.textContent = `${h.type} um ${h.time}${h.by ? ` durch ${h.by}` : ''}`;
                                 detailsActivityHistory.appendChild(li);
@@ -1692,8 +1664,8 @@
                         } else detailsActivityHistory.innerHTML = '<li class="text-[#8e8e93]">Keine Aktivitäten</li>';
                         
                         detailsCommentsList.innerHTML = '';
-                        if (currentParticipantInDetailsModal.comments?.length) {
-                            currentParticipantInDetailsModal.comments.forEach(c => {
+                        if (participant.comments?.length) {
+                            participant.comments.forEach(c => {
                                 const p = document.createElement('p');
                                 p.className = 'text-sm text-[#6c6c70]';
                                 p.innerHTML = `<strong>${c.by}</strong> (${c.timestamp}): ${c.text}`;
@@ -1702,6 +1674,7 @@
                         } else detailsCommentsList.innerHTML = '<p class="text-[#8e8e93]">Keine Kommentare</p>';
                         
                         newCommentText.value = '';
+                        currentParticipantInDetailsModal = participant;
                         participantDetailsModal.classList.remove('hidden');
                     }
                     resetInactivityTimer();
