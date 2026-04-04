@@ -267,6 +267,13 @@
             box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
         }
         
+        /* Für Betreuungsleitung - ausgegraute Buttons */
+        .admin-nav-button.disabled-nav {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
         #action-feedback-message {
             transform: translateY(-100%);
             opacity: 0;
@@ -464,7 +471,7 @@
         <!-- Admin Content Screen -->
         <div id="admin-content-screen" class="space-y-5 hidden">
             <h2 class="text-2xl font-bold text-center text-[#1d1d1f]">Admin-Bereich</h2>
-            <p class="text-center text-[#6c6c70]">Hier können Sie umfassende Einstellungen vornehmen.</p>
+            <p class="text-center text-[#6c6c70] mb-8">Willkommen im Admin-Bereich. Hier können Sie Einstellungen vornehmen.</p>
             <div class="flex flex-col space-y-2">
                 <button id="nav-user-management" class="admin-nav-button rounded-button">Benutzerverwaltung</button>
                 <button id="nav-participant-management" class="admin-nav-button rounded-button">Teilnehmerverwaltung</button>
@@ -483,6 +490,7 @@
                         <input type="text" id="new-user-code" placeholder="Zugangscode (z.B. 1234)" class="glass-input w-full p-2 mb-2 rounded-button">
                         <select id="new-user-status" class="w-full p-2 mb-3 rounded-button">
                             <option value="Betreuer">Betreuer</option>
+                            <option value="Betreuungsleitung">Betreuungsleitung</option>
                             <option value="admin">Admin</option>
                         </select>
                         <button id="add-user-button" class="glass-button-primary w-full py-2 rounded-button">Benutzer hinzufügen</button>
@@ -579,7 +587,7 @@
                     <p class="text-[#6c6c70] mb-3">Hier sehen Sie alle Teilnehmer und ihren aktuellen Status.</p>
                 </div>
 
-                <!-- Program Settings -->
+                <!-- Program Settings (nur für Admin sichtbar) -->
                 <div id="program-settings-section" class="glass-panel p-4 hidden">
                     <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Programmeinstellungen</h3>
                     <label class="flex items-center space-x-2 mb-4">
@@ -636,7 +644,7 @@
             </div>
         </div>
 
-        <!-- Pickup for Family Modal (vereinfacht - eine Abholperson für alle) -->
+        <!-- Pickup for Family Modal -->
         <div id="pickup-family-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
             <div class="modal-content p-5 w-full max-w-md mx-4">
                 <h3 class="text-xl font-bold text-[#1d1d1f] mb-3">Abholperson festlegen</h3>
@@ -819,8 +827,18 @@
             const confirmPickupFamily = document.getElementById('confirm-pickup-family');
             const pickupFamilyMessage = document.getElementById('pickup-family-message');
 
+            const navUserManagementButton = document.getElementById('nav-user-management');
             const navParticipantManagementButton = document.getElementById('nav-participant-management');
+            const navParticipantOverviewButton = document.getElementById('nav-participant-overview');
+            const navProgramSettingsButton = document.getElementById('nav-program-settings');
             const participantManagementSection = document.getElementById('participant-management-section');
+            const userManagementSection = document.getElementById('user-management-section');
+            const programSettingsSection = document.getElementById('program-settings-section');
+            const adminParticipantOverviewSection = document.getElementById('admin-participant-overview-section');
+            const adminNavButtons = document.querySelectorAll('.admin-nav-button');
+            const adminSectionWrapper = document.getElementById('admin-section-wrapper');
+            const adminWelcomeMessage = document.getElementById('admin-welcome-message');
+
             const newParticipantRegtypeSelect = document.getElementById('new-participant-regtype');
             const newParticipantStreetInput = document.getElementById('new-participant-street');
             const newParticipantCityInput = document.getElementById('new-participant-city');
@@ -842,16 +860,6 @@
             const removeDailyParticipantsButton = document.getElementById('remove-daily-participants-button');
             const resetAllParticipantsButton = document.getElementById('reset-all-participants-button');
 
-            const navUserManagementButton = document.getElementById('nav-user-management');
-            const navParticipantOverviewButton = document.getElementById('nav-participant-overview');
-            const navProgramSettingsButton = document.getElementById('nav-program-settings');
-            const userManagementSection = document.getElementById('user-management-section');
-            const programSettingsSection = document.getElementById('program-settings-section');
-            const adminParticipantOverviewSection = document.getElementById('admin-participant-overview-section');
-            const adminNavButtons = document.querySelectorAll('.admin-nav-button');
-            const adminSectionWrapper = document.getElementById('admin-section-wrapper');
-            const adminWelcomeMessage = document.getElementById('admin-welcome-message');
-
             // Global variables
             var enteredCode = '';
             var itemToDelete = null;
@@ -869,7 +877,7 @@
             // Family action variables
             var pendingFamilyAction = null;
             var familyMembersListData = [];
-            var pendingFamilyPickupMembers = null; // Für die gemeinsame Abholperson
+            var pendingFamilyPickupMembers = null;
 
             // Local Storage Keys
             const LOCAL_STORAGE_USERS_KEY = 'ferienprogramm_users';
@@ -945,6 +953,31 @@
                 }
             }
 
+            // Berechtigungen für Betreuungsleitung
+            function updateAdminNavigationByRole(userStatus) {
+                // Alle Buttons erstmal aktivieren (für Admin)
+                const navButtons = [
+                    { button: navUserManagementButton, section: 'user-management-section', allowedFor: ['admin'] },
+                    { button: navParticipantManagementButton, section: 'participant-management-section', allowedFor: ['admin', 'Betreuungsleitung'] },
+                    { button: navParticipantOverviewButton, section: 'admin-participant-overview-section', allowedFor: ['admin', 'Betreuungsleitung'] },
+                    { button: navProgramSettingsButton, section: 'program-settings-section', allowedFor: ['admin'] }
+                ];
+                
+                navButtons.forEach(item => {
+                    if (item.button) {
+                        if (item.allowedFor.includes(userStatus)) {
+                            item.button.classList.remove('disabled-nav');
+                            item.button.style.pointerEvents = 'auto';
+                            item.button.style.opacity = '1';
+                        } else {
+                            item.button.classList.add('disabled-nav');
+                            item.button.style.pointerEvents = 'none';
+                            item.button.style.opacity = '0.5';
+                        }
+                    }
+                });
+            }
+
             // User Functions
             function loadUsers() {
                 try {
@@ -953,7 +986,8 @@
                     else {
                         users = [
                             { id: Date.now() + '0', username: 'Betreuer', code: '1111', status: 'Betreuer', active: true },
-                            { id: Date.now() + '1', username: 'Admin', code: '240309', status: 'admin', active: true }
+                            { id: Date.now() + '1', username: 'Betreuungsleitung', code: '2222', status: 'Betreuungsleitung', active: true },
+                            { id: Date.now() + '2', username: 'Admin', code: '240309', status: 'admin', active: true }
                         ];
                         saveUsers();
                     }
@@ -982,7 +1016,7 @@
                         </div>
                         <div class="flex space-x-2">
                             <button data-id="${u.id}" class="toggle-user-active-button text-[#ff9500] text-sm rounded-button px-2 py-1 bg-white/50">${u.active ? 'Deaktivieren' : 'Aktivieren'}</button>
-                            <button data-id="${u.id}" class="change-user-status-button text-[#007aff] text-sm rounded-button px-2 py-1 bg-white/50">${u.status === 'admin' ? '→ Betreuer' : '→ Admin'}</button>
+                            <button data-id="${u.id}" class="change-user-status-button text-[#007aff] text-sm rounded-button px-2 py-1 bg-white/50">${u.status === 'admin' ? '→ Betreuer' : (u.status === 'Betreuungsleitung' ? '→ Admin' : '→ Betreuungsleitung')}</button>
                             <button data-id="${u.id}" data-username="${u.username}" data-type="user" class="delete-item-button text-[#ff3b30] text-sm rounded-button px-2 py-1 bg-white/50">Löschen</button>
                         </div>
                     `;
@@ -1145,7 +1179,6 @@
                 });
             }
 
-            // Vereinfachte Pickup-Funktion für Familien (eine Abholperson für alle)
             function showPickupForFamily(selectedMembers) {
                 const membersNeedingPickup = selectedMembers.filter(m => !m.canGoHomeAlone);
                 if (membersNeedingPickup.length === 0) {
@@ -1187,9 +1220,7 @@
                     }
                 });
                 
-                // Temporäre Speicherung der ausgewählten Mitglieder
                 pendingFamilyPickupMembers = selectedMembers;
-                
                 pickupFamilyModal.classList.remove('hidden');
             }
             
@@ -1452,12 +1483,14 @@
                             updateCodeDisplay();
                             currentLoggedInUsername = user.username;
                             currentLoggedInUserStatus = user.status;
-                            if (user.status === 'admin') {
+                            if (user.status === 'admin' || user.status === 'Betreuungsleitung') {
                                 mainContentScreen.classList.add('hidden');
                                 adminContentScreen.classList.remove('hidden');
+                                // Berechtigungen für die Navigation setzen
+                                updateAdminNavigationByRole(user.status);
                                 showAdminSection('');
                                 unifiedParticipantContainer.classList.add('hidden');
-                                showMessage(`Willkommen Admin ${user.username}`, false);
+                                showMessage(`Willkommen ${user.username} (${user.status === 'admin' ? 'Admin' : 'Betreuungsleitung'})`, false);
                             } else {
                                 adminContentScreen.classList.add('hidden');
                                 mainContentScreen.classList.remove('hidden');
@@ -1501,7 +1534,14 @@
                 } else if (target.classList.contains('change-user-status-button')) {
                     const idx = users.findIndex(u => u.id === id);
                     if (idx > -1) {
-                        users[idx].status = users[idx].status === 'admin' ? 'Betreuer' : 'admin';
+                        const currentStatus = users[idx].status;
+                        if (currentStatus === 'admin') {
+                            users[idx].status = 'Betreuer';
+                        } else if (currentStatus === 'Betreuungsleitung') {
+                            users[idx].status = 'admin';
+                        } else {
+                            users[idx].status = 'Betreuungsleitung';
+                        }
                         saveUsers();
                         showMessage("Status geändert", false);
                     }
@@ -1563,7 +1603,6 @@
             document.addEventListener('click', (e) => {
                 const target = e.target;
                 
-                // Participant action button
                 if (target.classList?.contains('participant-action-button')) {
                     const pid = target.dataset.id;
                     const action = target.dataset.action;
@@ -1608,7 +1647,6 @@
                     resetInactivityTimer();
                 }
                 
-                // Info icon
                 else if (target.classList?.contains('info-icon')) {
                     const pid = target.dataset.id;
                     const participant = participants.find(p => p.id === pid);
