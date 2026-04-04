@@ -1,1181 +1,1801 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>An- und Abmeldung für das Ferienprogramm</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #f9fafb;
-  color: #333;
-  padding: 1rem;
-  line-height: 1.6;
-}
-
-h1, h2, h3, h4 {
-  color: #1f2937;
-}
-
-.hidden {
-  display: none !important;
-
-}
-
-button {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-button:hover {
-  background-color: #2563eb;
-}
-
-.danger-button {
-  background-color: #ef4444;
-}
-
-.danger-button:hover {
-  background-color: #dc2626;
-}
-
-.logout-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background-color: #fca5a5;
-  color: #000;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-  margin-top: 1rem;
-  background-color: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  font-size: 0.9rem; /* Optional: Schrift etwas kleiner */
-}
-
-th, td {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0.5rem 0.5rem; /* Reduziertes Padding (oben/unten: 0.4rem, links/rechts: 0.75rem) */
-  text-align: left;
-  line-height: 1; /* Engerer Zeilenabstand */
-}
-
-th.comment-column, td.comment-column {
-  width: 20px;
-  text-align: center;
-}
-
-
-thead {
-  background-color: #f3f4f6;
-}
-
-tr:nth-child(even) {
-  background-color: #f9fafb;
-}
-
-tr:hover {
-  background-color: #eef2f7;
-}
-
-input[type="text"],
-input[type="password"] {
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  margin: 0.25rem 0;
-  width: 100%;
-  max-width: 300px;
-  box-sizing: border-box;
-}
-
-.search-box {
-  width: 100%;
-  max-width: 400px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 0.5rem;
-}
-
-.counter-display {
-  background: #e0f2fe;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin: 1rem 0;
-  font-weight: bold;
-  display: inline-block;
-}
-
-.admin-panel, .add-participant-form, .export-options, .change-password-form {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1rem;
-  margin: 1rem 0;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-}
-
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 10;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.4);
-}
-
-.modal-content {
-  background-color: #ffffff;
-  margin: 2% auto;
-  padding: 2rem;
-  border-radius: 10px;
-  max-width: 900px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.close {
-  color: #999;
-  float: right;
-  font-size: 24px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.info-button {
-  background-color: #10b981;
-}
-
-.info-button:hover {
-  background-color: #059669;
-}
-
-.edit-button {
-  background-color: #3b82f6;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-}
-
-.edit-field {
-  width: 100%;
-  padding: 0.4rem;
-  margin: 0.2rem 0;
-  border: 1px solid #d1d5db;
-  border-radius: 5px;
-}
-
-#editStreet, #editCity {
-  width: 50%;  /* Halbe Breite */
-}
-
-#editAllowAlone, #editPaid {
-  width: 25%;  /* Viertel Breite */
-}
-
-.highlight {
-  background-color: #fef08a;
-}
-
-.green {
-  background-color: #d1fae5; /* weiches Grün */
-  color: #065f46;
-  font-weight: bold;
-}
-
-.red {
-  background-color: #fee2e2; /* weiches Rot */
-  color: #991b1b;
-  font-weight: bold;
-}
-
-.info-details {
-  font-size: 0.8rem;
-  line-height: 1; /* Diese Zeile hinzufügen oder anpassen */
-}
-}
-
-.warning {
-  color: #d97706;  /* Orange */
-  font-weight: bold;
-}
-
-.header-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  text-align: center;
-  margin-top: 2rem; /* Optional: Abstand vom oberen Rand */
-}
-
-.login-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-#adminOnlyFields {
-  margin-bottom: 1rem; /* Abstand zum Kommentarfeld */
-}
-
-.comment-icon {
-  cursor: pointer;
-  font-size: 1.2rem;
-}
-
-#commentContent {
-  white-space: pre-wrap; /* Behält Zeilenumbrüche bei */
-  line-height: 1.5;
-  font-size: 1rem;
-}
-
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ferienprogramm Anmelde-App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- SheetJS (xlsx.js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-image: url('https://raw.githubusercontent.com/DittmarJ/tuttikiesiferien/main/slider-3.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            margin: 0;
+        }
+        
+        /* Glassmorphism Core Styles */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        
+        .glass-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 2rem;
+            color: #1d1d1f;
+            transition: all 0.2s ease;
+            padding: 0.75rem 1rem;
+        }
+        
+        .glass-input:focus {
+            outline: none;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+        
+        .glass-input::placeholder {
+            color: #8e8e93;
+        }
+        
+        .glass-button {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 2rem;
+            color: #1d1d1f;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            padding: 0.75rem 1.5rem;
+        }
+        
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .glass-button:active {
+            transform: translateY(0);
+        }
+        
+        .glass-button-primary {
+            background: rgba(0, 122, 255, 0.95);
+            border-color: rgba(0, 122, 255, 0.3);
+            color: white;
+        }
+        
+        .glass-button-primary:hover {
+            background: rgba(0, 122, 255, 1);
+        }
+        
+        .glass-button-success {
+            background: rgba(52, 199, 89, 0.95);
+            border-color: rgba(52, 199, 89, 0.3);
+            color: white;
+        }
+        
+        .glass-button-success:hover {
+            background: rgba(52, 199, 89, 1);
+        }
+        
+        .glass-button-danger {
+            background: rgba(255, 59, 48, 0.95);
+            border-color: rgba(255, 59, 48, 0.3);
+            color: white;
+        }
+        
+        .glass-button-danger:hover {
+            background: rgba(255, 59, 48, 1);
+        }
+        
+        .glass-button-warning {
+            background: rgba(255, 149, 0, 0.95);
+            border-color: rgba(255, 149, 0, 0.3);
+            color: white;
+        }
+        
+        .participant-item-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: grab;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.2s ease;
+        }
+        
+        .participant-item-container:active {
+            cursor: grabbing;
+        }
+        
+        .participant-item-container:hover {
+            background: rgba(255, 255, 255, 0.85);
+            transform: translateX(2px);
+        }
+        
+        .participant-content-wrapper {
+            padding: 0.875rem 1rem;
+            position: relative;
+            z-index: 10;
+            transition: transform 0.3s ease-out;
+            touch-action: pan-y;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .participant-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+        
+        .participant-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        
+        .participant-action-button-container {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-out;
+            z-index: 5;
+            padding-right: 1rem;
+        }
+        
+        .participant-item-container.swiped .participant-action-button-container {
+            transform: translateX(0);
+        }
+        
+        .participant-item-container.swiped .participant-content-wrapper {
+            transform: translateX(-120px);
+        }
+        
+        .participant-action-button {
+            border-radius: 2rem;
+            font-weight: 600;
+            padding: 0.5rem 1.25rem;
+            white-space: nowrap;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .participant-action-button.anmelden-button {
+            background: #34c759;
+            color: white;
+            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+        }
+        
+        .participant-action-button.abmelden-button {
+            background: #ff3b30;
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+        }
+        
+        .info-icon {
+            font-weight: 600;
+            cursor: pointer;
+            color: #007aff;
+            background: rgba(0, 122, 255, 0.1);
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .info-icon:hover {
+            background: rgba(0, 122, 255, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .comment-icon {
+            background: rgba(0, 122, 255, 0.15);
+            color: #007aff;
+            border-radius: 2rem;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            flex-shrink: 0;
+            cursor: help;
+        }
+        
+        .admin-nav-button {
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+            border-radius: 2rem;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            color: #1d1d1f;
+        }
+        
+        .admin-nav-button:not(.active):hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateX(4px);
+        }
+        
+        .admin-nav-button.active {
+            background: rgba(0, 122, 255, 0.95);
+            border-color: rgba(0, 122, 255, 0.3);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
+        }
+        
+        #action-feedback-message {
+            transform: translateY(-100%);
+            opacity: 0;
+            transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+        }
+        
+        #action-feedback-message.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .keypad-button {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 2rem;
+            color: #1d1d1f;
+            font-weight: 600;
+            padding: 1rem;
+            font-size: 1.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .keypad-button:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(0.98);
+        }
+        
+        .modal-glass {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+        }
+        
+        .modal-content {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        select, input, textarea {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 2rem;
+            color: #1d1d1f;
+            padding: 0.75rem 1rem;
+        }
+        
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+        
+        label {
+            color: #1d1d1f;
+        }
+        
+        .text-gray-600, .text-gray-500, .text-gray-700, .text-gray-800 {
+            color: #6c6c70 !important;
+        }
+        
+        hr, .border-t, .border-b {
+            border-color: rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .no-data-warning-detail {
+            background: rgba(255, 149, 0, 0.1);
+            border-left: 3px solid #ff9500;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+            color: #ff9500;
+            font-size: 0.8rem;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 2rem;
+            flex-shrink: 0;
+        }
+        
+        .status-dot-green { background-color: #34c759; }
+        .status-dot-gray { background-color: #8e8e93; }
+        .status-dot-red { background-color: #ff3b30; }
+        
+        .participant-name {
+            font-weight: 500;
+            color: #1d1d1f;
+        }
+        
+        .participant-meta {
+            color: #8e8e93;
+            font-size: 0.75rem;
+        }
+        
+        .user-inactive {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+        
+        .family-modal-item {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .family-modal-item:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateX(4px);
+        }
+        
+        .rounded-button {
+            border-radius: 2rem !important;
+        }
+    </style>
 </head>
 <body>
-  <div class="header-container">
-<h1>An- und Abmeldung für das Ferienprogramm</h1>
-    <button id="logoutButton" class="logout-btn hidden" onclick="logout()">Abmelden</button>
-  </div>
+    <div id="app-container" class="glass-card w-full max-w-4xl mx-auto p-5 transition-all duration-300">
+        
+        <!-- Login Screen -->
+        <div id="login-screen" class="space-y-4">
+            <div class="flex flex-col items-center mb-4">
+                <img src="https://raw.githubusercontent.com/DittmarJ/anmeldesystem_update2/81a13401c99e7f3f1d729472a6ca3d21ef9ad3c8/tuttikiesi-logo-2.png" 
+                     alt="Tuttikiesi Logo"
+                     class="h-20 object-contain">
+            </div>
+            <h1 class="text-3xl font-bold text-center text-[#1d1d1f] mb-2">Anmeldesystem Ferienprogramm</h1>
+            <p class="text-center text-[#6c6c70] mb-6">Bitte geben Sie den Zugangscode ein.</p>
+            <div class="max-w-md mx-auto">
+                <div class="glass-panel p-4 text-center text-2xl font-semibold tracking-wider text-[#1d1d1f] mb-6 rounded-button">
+                    <span id="code-display"></span><span id="cursor" class="animate-pulse">|</span>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <button class="keypad-button" data-value="1">1</button>
+                    <button class="keypad-button" data-value="2">2</button>
+                    <button class="keypad-button" data-value="3">3</button>
+                    <button class="keypad-button" data-value="4">4</button>
+                    <button class="keypad-button" data-value="5">5</button>
+                    <button class="keypad-button" data-value="6">6</button>
+                    <button class="keypad-button" data-value="7">7</button>
+                    <button class="keypad-button" data-value="8">8</button>
+                    <button class="keypad-button" data-value="9">9</button>
+                    <button class="keypad-button glass-button-danger" data-action="clear">⌫</button>
+                    <button class="keypad-button" data-value="0">0</button>
+                    <button class="keypad-button glass-button-success" data-action="enter">✓</button>
+                </div>
+                <div id="message-box" class="mt-4 p-3 bg-red-500/20 border border-red-500/30 text-[#ff3b30] rounded-2xl hidden text-center"></div>
+            </div>
+        </div>
 
-<div class="login login-container">
-  <h3>Bitte PIN eingeben:</h3>
-  <input id="pinCodeInput" type="password" maxlength="6" readonly
-    style="font-size: 1rem; text-align: center; width: 200px; padding: 0.5rem; border-radius: 8px; border: 1px solid #ccc;" />
+        <!-- Main Content Screen (Betreuer) -->
+        <div id="main-content-screen" class="space-y-5 hidden">
+            <div class="flex flex-col items-center">
+                <img src="https://raw.githubusercontent.com/DittmarJ/anmeldesystem_update2/81a13401c99e7f3f1d729472a6ca3d21ef9ad3c8/tuttikiesi-logo-2.png" 
+                     alt="Tuttikiesi Logo"
+                     class="h-16 object-contain">
+            </div>
+            <h2 class="text-2xl font-bold text-center text-[#1d1d1f]">Ferienprogramm An- und Abmeldung</h2>
+            <p class="text-center text-[#6c6c70]">
+                Willkommen, <span id="betreuer-name-display" class="font-semibold text-[#007aff]"></span>! – 
+                <a href="#" id="instructions-link" class="text-[#007aff] hover:underline">Hilfe und Anleitung</a>
+            </p>
+            <div id="action-feedback-message" class="fixed top-0 left-0 w-full text-white text-center py-3 transform -translate-y-full transition-all duration-500 z-50 shadow-lg rounded-button" style="background: rgba(52,199,89,0.95); backdrop-filter: blur(8px);"></div>
+            <button id="logout-button-main" class="glass-button w-full py-3 mt-4 rounded-button">
+                Abmelden
+            </button>
+        </div>
 
-  <div id="pinPad" style="display: grid; grid-template-columns: repeat(3, 80px); gap: 15px; justify-content: center;">
-    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('1')">1</button>
-    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('2')">2</button>
-    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('3')">3</button>
-    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('4')">4</button>
-    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('5')">5</button>
-    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('6')">6</button>
-    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('7')">7</button>
-    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('8')">8</button>
-    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('9')">9</button>
-    <button style="height: 60px; font-size: 1.5rem;" onclick="clearPin()">⟲</button>
-    <button style="height: 60px; font-size: 1.5rem;" onclick="appendPin('0')">0</button>
-    <button style="height: 60px; font-size: 1.5rem;" onclick="loginWithPin()">✓</button>
-  </div>
-</div>
+        <!-- Instructions Screen -->
+        <div id="instructions-screen" class="hidden p-5 glass-panel">
+            <h3 class="text-xl font-bold text-[#1d1d1f] mb-4">Anleitung</h3>
+            <p class="mb-3 text-[#6c6c70]">Nach links wischen, um den Anmelde- oder Abmelde-Button zu sehen.</p>
+            <p class="mb-3 text-[#6c6c70]">Zum An- oder Abmelden auf den Button tippen.</p>
+            <p class="mb-3 text-[#6c6c70]">Über den Info-Button können Details eingesehen und Kommentare hinzugefügt werden.</p>
+            <p class="mb-3 text-[#6c6c70]">Bei vorhandenen Kommentaren erscheint ein C vor dem Info-Button.</p>
+            <p class="mb-3 text-[#6c6c70]">Alle Änderungen werden automatisch gespeichert.</p>
+            <button id="close-instructions" class="glass-button-primary w-full py-3 mt-4 rounded-button">Zurück</button>
+        </div>
 
+        <!-- Admin Content Screen -->
+        <div id="admin-content-screen" class="space-y-5 hidden">
+            <h2 class="text-2xl font-bold text-center text-[#1d1d1f]">Admin-Bereich</h2>
+            <p class="text-center text-[#6c6c70]">Hier können Sie umfassende Einstellungen vornehmen.</p>
+            <div class="flex flex-col space-y-2">
+                <button id="nav-user-management" class="admin-nav-button rounded-button">Benutzerverwaltung</button>
+                <button id="nav-participant-management" class="admin-nav-button rounded-button">Teilnehmerverwaltung</button>
+                <button id="nav-participant-overview" class="admin-nav-button rounded-button">Teilnehmerübersicht</button>
+                <button id="nav-program-settings" class="admin-nav-button rounded-button">Programmeinstellungen</button>
+            </div>
+            <div id="admin-section-wrapper" class="hidden">
+                <p id="admin-welcome-message" class="text-center text-[#6c6c70] mb-4">Bitte wählen Sie eine Option oben.</p>
+                
+                <!-- User Management -->
+                <div id="user-management-section" class="glass-panel p-4 hidden">
+                    <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Benutzerverwaltung</h3>
+                    <div class="mb-5 border-b pb-4">
+                        <h4 class="text-md font-medium text-[#1d1d1f] mb-3">Neuen Benutzer hinzufügen</h4>
+                        <input type="text" id="new-username" placeholder="Benutzername" class="glass-input w-full p-2 mb-2 rounded-button">
+                        <input type="text" id="new-user-code" placeholder="Zugangscode (z.B. 1234)" class="glass-input w-full p-2 mb-2 rounded-button">
+                        <select id="new-user-status" class="w-full p-2 mb-3 rounded-button">
+                            <option value="Betreuer">Betreuer</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <button id="add-user-button" class="glass-button-primary w-full py-2 rounded-button">Benutzer hinzufügen</button>
+                        <div id="add-user-message" class="mt-2 text-sm text-center hidden"></div>
+                    </div>
+                    <div>
+                        <h4 class="text-md font-medium text-[#1d1d1f] mb-3">Aktuelle Benutzer</h4>
+                        <ul id="user-list" class="space-y-2"></ul>
+                    </div>
+                </div>
 
-  <div id="app" class="hidden">
-    <h2 id="welcome"></h2>
-    
-    <!-- Passwort ändern Button für alle Betreuer -->
-    <button onclick="showChangePasswordModal()">🔒 Passwort ändern</button>
-    
-    <!-- Admin Panel nur für DittmarJ -->
-    <div id="adminPanel" class="admin-panel hidden">
-      <h3>Admin-Bereich</h3>
-      <div>
-        <h4>Teilnehmerliste hochladen (XLSX)</h4>
-        <input type="file" id="uploadParticipants" accept=".xlsx" />
-      </div>
-      <div class="add-participant-form">
-        <h4>Teilnehmer manuell hinzufügen</h4>
-        <label>Nachname: <input id="newParticipantLastname" type="text" /></label>
-        <label>Vorname: <input id="newParticipantFirstname" type="text" /></label>
-        <label>Straße: <input id="newParticipantStreet" type="text" /></label>
-        <label>Ort: <input id="newParticipantCity" type="text" /></label>
-        <label>Telefon: <input id="newParticipantPhone" type="text" /></label>
-        <label>E-Mail: <input id="newParticipantEmail" type="text" /></label>
-        <label>Darf alleine nach Hause: <input id="newParticipantAlone" type="text" /></label>
-        <label>Bezahlt: <input id="newParticipantPaid" type="text" /></label>
-        <button onclick="addParticipant()">Teilnehmer hinzufügen</button>
-      </div>
-      <div>
-        <h4>Betreuer verwalten</h4>
-        <button onclick="showStaffManagement()">Betreuerliste anzeigen</button>
-      </div>
-      
-      <div class="export-options">
-        <h4>Datenverwaltung</h4>
-        <button onclick="exportTodayToExcel()">📤 Tagesexport (.xlsx)</button>
-        <button onclick="exportFullHistoryToExcel()">📋 Kompletter Export (.xlsx)</button>
-        <button onclick="confirmDataDeletion()" class="danger-button">🗑️ Alle Daten löschen</button>
-        <button onclick="confirmCheckinDataDeletion()" class="danger-button">♻️ Anmeldedaten zurücksetzen</button>
-      </div>
-      
-      <p><small>Daten werden im Browser gespeichert und nach 14 Tagen automatisch gelöscht.</small></p>
+                <!-- Participant Management -->
+                <div id="participant-management-section" class="glass-panel p-4 hidden">
+                    <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Teilnehmerverwaltung</h3>
+                    <div class="mb-5 border-b pb-4">
+                        <h4 class="text-md font-medium text-[#1d1d1f] mb-3">Neuen Teilnehmer manuell hinzufügen</h4>
+                        
+                        <div class="mb-3">
+                            <label class="block text-xs font-bold text-[#6c6c70] uppercase mb-1">Anmeldungstyp</label>
+                            <select id="new-participant-regtype" class="w-full rounded-button">
+                                <option value="Tagesanmeldung" selected>Tagesanmeldung</option>
+                                <option value="Wochenanmeldung">Wochenanmeldung</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="no-data-checkbox" class="h-4 w-4 rounded">
+                                <span class="text-sm text-[#1d1d1f]">Keine persönlichen Daten hinterlegt</span>
+                            </label>
+                            <p class="text-xs text-[#8e8e93] mt-1 ml-6">Aktivieren, wenn keine Daten vorliegen</p>
+                        </div>
+
+                        <div class="space-y-3 mb-4">
+                            <div class="p-3 rounded-2xl border border-[rgba(0,0,0,0.1)]">
+                                <p class="text-xs font-bold text-[#007aff] mb-2">Kind 1</p>
+                                <input type="text" id="child1-first-name" placeholder="Vorname" class="glass-input w-full p-2 mb-2 rounded-button">
+                                <input type="text" id="child1-last-name" placeholder="Nachname" class="glass-input w-full p-2 mb-2 rounded-button">
+                                <input type="text" id="child1-birth" placeholder="Geburtsdatum (TT.MM.JJJJ)" class="glass-input w-full p-2 rounded-button">
+                            </div>
+                            <div id="child2-container" class="p-3 rounded-2xl border border-[rgba(0,0,0,0.1)] hidden">
+                                <p class="text-xs font-bold text-[#007aff] mb-2">Kind 2</p>
+                                <input type="text" id="child2-first-name" placeholder="Vorname" class="glass-input w-full p-2 mb-2 rounded-button">
+                                <input type="text" id="child2-last-name" placeholder="Nachname" class="glass-input w-full p-2 mb-2 rounded-button">
+                                <input type="text" id="child2-birth" placeholder="Geburtsdatum (TT.MM.JJJJ)" class="glass-input w-full p-2 rounded-button">
+                            </div>
+                            <div id="child3-container" class="p-3 rounded-2xl border border-[rgba(0,0,0,0.1)] hidden">
+                                <p class="text-xs font-bold text-[#007aff] mb-2">Kind 3</p>
+                                <input type="text" id="child3-first-name" placeholder="Vorname" class="glass-input w-full p-2 mb-2 rounded-button">
+                                <input type="text" id="child3-last-name" placeholder="Nachname" class="glass-input w-full p-2 mb-2 rounded-button">
+                                <input type="text" id="child3-birth" placeholder="Geburtsdatum (TT.MM.JJJJ)" class="glass-input w-full p-2 rounded-button">
+                            </div>
+                            <button type="button" id="add-sibling-row-button" class="text-[#007aff] text-sm font-bold flex items-center hover:text-[#0051d5] transition rounded-button px-3 py-2 bg-white/50">
+                                <span class="mr-1 text-lg">+</span> Geschwisterkind hinzufügen
+                            </button>
+                        </div>
+
+                        <div class="space-y-2 mb-3 pt-3 border-t">
+                            <p class="text-sm font-bold text-[#1d1d1f] mb-1">Adresse (für alle geltend, optional):</p>
+                            <input type="text" id="new-participant-street" placeholder="Straße" class="glass-input w-full p-2 rounded-button">
+                            <input type="text" id="new-participant-city" placeholder="Ort" class="glass-input w-full p-2 rounded-button">
+                            <input type="text" id="new-participant-phone" placeholder="Telefon" class="glass-input w-full p-2 rounded-button">
+                        </div>
+
+                        <div class="space-y-2 mb-4">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" id="new-participant-can-go-home-alone" class="h-4 w-4 rounded" checked>
+                                <span class="text-sm text-[#1d1d1f]">Darf alleine nach Hause</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" id="new-participant-paid" class="h-4 w-4 rounded" checked>
+                                <span class="text-sm text-[#1d1d1f]">Bezahlt</span>
+                            </label>
+                        </div>
+
+                        <div class="flex space-x-2">
+                            <button id="add-participant-manual-button" class="glass-button-primary w-1/2 py-2 rounded-button">Hinzufügen</button>
+                            <button id="add-and-signin-participant-button" class="glass-button-success w-1/2 py-2 rounded-button">Hinzufügen und Anmelden</button>
+                        </div>
+                        <div id="add-participant-manual-message" class="mt-2 text-sm text-center hidden"></div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-md font-medium text-[#1d1d1f] mb-3">Excel-Import</h4>
+                        <input type="file" id="import-participants-file-input" accept=".xlsx,.xls" class="glass-input w-full p-2 mb-2 rounded-button">
+                        <button id="import-participants-button" class="glass-button w-full py-2 rounded-button">Excel importieren</button>
+                        <div id="import-participants-message" class="mt-2 text-sm text-center hidden"></div>
+                    </div>
+                </div>
+
+                <!-- Admin Participant Overview -->
+                <div id="admin-participant-overview-section" class="glass-panel p-4 hidden">
+                    <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Teilnehmerübersicht</h3>
+                    <p class="text-[#6c6c70] mb-3">Hier sehen Sie alle Teilnehmer und ihren aktuellen Status.</p>
+                </div>
+
+                <!-- Program Settings -->
+                <div id="program-settings-section" class="glass-panel p-4 hidden">
+                    <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Programmeinstellungen</h3>
+                    <label class="flex items-center space-x-2 mb-4">
+                        <input type="checkbox" id="control-mode-toggle" class="h-4 w-4 rounded">
+                        <span class="text-sm text-[#1d1d1f]">Kontrollmodus aktivieren (unbezahlte Teilnehmer rot markieren)</span>
+                    </label>
+                    <div class="space-y-2 mb-4 border-t pt-4">
+                        <h4 class="text-md font-medium text-[#1d1d1f] mb-2">Sicherung</h4>
+                        <button id="create-backup-button" class="glass-button w-full py-2 rounded-button">Sicherung erstellen</button>
+                        <input type="file" id="load-backup-input" accept=".json" class="hidden">
+                        <button id="load-backup-button" class="glass-button w-full py-2 rounded-button">Sicherung laden</button>
+                    </div>
+                    <div class="space-y-2 pt-2">
+                        <h4 class="text-md font-medium text-[#1d1d1f] mb-2">Datenverwaltung</h4>
+                        <button id="remove-all-participants-button" class="glass-button-danger w-full py-2 rounded-button">Alle Teilnehmer löschen</button>
+                        <button id="remove-daily-participants-button" class="glass-button w-full py-2 rounded-button">Tagesanmeldungen löschen</button>
+                        <button id="reset-all-participants-button" class="glass-button w-full py-2 rounded-button">Status zurücksetzen</button>
+                    </div>
+                </div>
+            </div>
+            <button id="logout-button-admin" class="glass-button w-full py-3 mt-3 rounded-button">Abmelden</button>
+        </div>
+
+        <!-- Unified Participant List Container -->
+        <div id="unified-participant-container" class="min-h-[200px] space-y-3 mt-4 hidden">
+            <div class="space-y-2 mb-3">
+                <input type="text" id="participant-search-input" placeholder="Teilnehmer suchen..." class="glass-input w-full p-2 rounded-button">
+                <div class="flex items-center space-x-2">
+                    <select id="first-name-filter" class="flex-1 p-2 rounded-button">
+                        <option value="">Vorname (Alle)</option>
+                        <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                        <option value="D">D</option><option value="E">E</option><option value="F">F</option>
+                        <option value="G">G</option><option value="H">H</option><option value="I">I</option>
+                        <option value="J">J</option><option value="K">K</option><option value="L">L</option>
+                        <option value="M">M</option><option value="N">N</option><option value="O">O</option>
+                        <option value="P">P</option><option value="Q">Q</option><option value="R">R</option>
+                        <option value="S">S</option><option value="T">T</option><option value="U">U</option>
+                        <option value="V">V</option><option value="W">W</option><option value="X">X</option>
+                        <option value="Y">Y</option><option value="Z">Z</option>
+                    </select>
+                    <select id="last-name-filter" class="flex-1 p-2 rounded-button">
+                        <option value="">Nachname (Alle)</option>
+                        <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                        <option value="D">D</option><option value="E">E</option><option value="F">F</option>
+                        <option value="G">G</option><option value="H">H</option><option value="I">I</option>
+                        <option value="J">J</option><option value="K">K</option><option value="L">L</option>
+                        <option value="M">M</option><option value="N">N</option><option value="O">O</option>
+                        <option value="P">P</option><option value="Q">Q</option><option value="R">R</option>
+                        <option value="S">S</option><option value="T">T</option><option value="U">U</option>
+                        <option value="V">V</option><option value="W">W</option><option value="X">X</option>
+                        <option value="Y">Y</option><option value="Z">Z</option>
+                    </select>
+                    <button id="reset-filters-button" class="glass-button px-3 py-2 rounded-button">Zurücksetzen</button>
+                </div>
+            </div>
+            <p class="text-sm text-[#6c6c70] mb-2">Angemeldete Teilnehmer: <span id="participant-count" class="font-semibold text-[#34c759]">0</span></p>
+            <ul id="unified-participant-list" class="space-y-2"></ul>
+            <p id="no-participants-message-unified" class="text-center text-[#8e8e93] text-sm mt-4 hidden">Noch keine Teilnehmer vorhanden.</p>
+        </div>
+
+        <!-- Family Selection Modal (für Familien-Anmeldung) -->
+        <div id="family-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
+            <div class="modal-content p-5 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
+                <h3 id="family-modal-title" class="text-xl font-bold text-[#1d1d1f] mb-3">Familienmitglieder auswählen</h3>
+                <p id="family-modal-message" class="text-[#6c6c70] mb-4">Folgende Kinder haben den gleichen Nachnamen. Bitte wählen Sie aus, welche Sie an- oder abmelden möchten:</p>
+                <div id="family-members-list" class="space-y-2 mb-4 max-h-60 overflow-y-auto"></div>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancel-family-modal" class="glass-button px-4 py-2 rounded-button">Abbrechen</button>
+                    <button id="confirm-family-action" class="glass-button-primary px-4 py-2 rounded-button">Ausgewählte bearbeiten</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="delete-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
+            <div class="modal-content p-6 w-full max-w-sm mx-4">
+                <h3 id="delete-modal-title" class="text-xl font-bold text-[#1d1d1f] mb-3">Bestätigung</h3>
+                <p id="delete-modal-message" class="mb-5 text-[#6c6c70]"></p>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancel-delete" class="glass-button px-4 py-2 rounded-button">Abbrechen</button>
+                    <button id="confirm-delete" class="glass-button-primary px-4 py-2 rounded-button">Bestätigen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Participant Details Modal -->
+        <div id="participant-details-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
+            <div class="modal-content p-5 w-full max-w-md mx-4 max-h-[85vh] overflow-y-auto">
+                <h3 id="details-modal-title" class="text-xl font-bold text-[#1d1d1f] mb-4">Teilnehmerdetails</h3>
+                <div class="space-y-3 text-[#1d1d1f]">
+                    <div><strong>Vorname:</strong> <span id="details-first-name-display"></span><input type="text" id="details-first-name-input" class="glass-input w-full mt-1 hidden rounded-button"></div>
+                    <div><strong>Nachname:</strong> <span id="details-last-name-display"></span><input type="text" id="details-last-name-input" class="glass-input w-full mt-1 hidden rounded-button"></div>
+                    <div><strong>Straße:</strong> <span id="details-street-display"></span><input type="text" id="details-street-input" class="glass-input w-full mt-1 hidden rounded-button"></div>
+                    <div><strong>Ort:</strong> <span id="details-city-display"></span><input type="text" id="details-city-input" class="glass-input w-full mt-1 hidden rounded-button"></div>
+                    <div><strong>Telefon:</strong> <span id="details-phone-display"></span><input type="text" id="details-phone-input" class="glass-input w-full mt-1 hidden rounded-button"></div>
+                    <div><strong>Anmeldungstyp:</strong> <span id="details-regtype-display"></span><select id="details-regtype-select" class="w-full mt-1 hidden rounded-button"><option value="Tagesanmeldung">Tagesanmeldung</option><option value="Wochenanmeldung">Wochenanmeldung</option></select></div>
+                    <div class="flex items-center"><strong>Bezahlt:</strong> <span id="details-paid-display" class="ml-2"></span><input type="checkbox" id="details-paid-input" class="ml-2 hidden rounded-button"></div>
+                    <div class="flex items-center"><strong>Darf alleine:</strong> <span id="details-can-go-home-alone-display" class="ml-2"></span><input type="checkbox" id="details-can-go-home-alone-input" class="ml-2 hidden rounded-button"></div>
+                    <div><strong>Keine Daten:</strong> <span id="details-no-data-display"></span><input type="checkbox" id="details-no-data-input" class="ml-2 hidden rounded-button"></div>
+                    
+                    <div id="no-data-warning-detail" class="no-data-warning-detail hidden">
+                        Keine persönlichen Daten hinterlegt. Bitte wenden Sie sich an einen Vorgesetzten.
+                    </div>
+                    
+                    <div id="details-picked-up-by-row" class="hidden"><strong>Abgeholt von:</strong> <span id="details-picked-up-by"></span></div>
+                </div>
+                
+                <div class="mt-4 pt-3 border-t">
+                    <h4 class="font-bold text-[#1d1d1f] mb-2">Kommentare</h4>
+                    <div id="details-comments-list" class="space-y-1 mb-3 max-h-32 overflow-y-auto p-2 rounded-2xl bg-[rgba(0,0,0,0.03)]"></div>
+                    <textarea id="new-comment-text" class="glass-input w-full p-2 text-sm rounded-button" placeholder="Neuen Kommentar eingeben..."></textarea>
+                    <button id="add-comment-button" class="glass-button-success w-full mt-2 py-2 text-sm rounded-button">Kommentar hinzufügen</button>
+                </div>
+                
+                <div class="mt-4 pt-3 border-t">
+                    <h4 class="font-bold text-[#1d1d1f] mb-2">Aktivitäten</h4>
+                    <ul id="details-activity-history" class="space-y-1 text-sm max-h-32 overflow-y-auto"></ul>
+                </div>
+                
+                <div class="flex justify-end space-x-3 mt-5">
+                    <button id="save-details-button" class="glass-button-primary px-4 py-2 hidden rounded-button">Speichern</button>
+                    <button id="close-details-modal" class="glass-button px-4 py-2 rounded-button">Schließen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pickup Modal -->
+        <div id="pickup-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
+            <div class="modal-content p-5 w-full max-w-sm mx-4">
+                <h3 class="text-xl font-bold text-[#1d1d1f] mb-3">Teilnehmer abholen</h3>
+                <p class="mb-3 text-[#6c6c70]">Wer holt <span id="pickup-participant-name" class="font-semibold text-[#1d1d1f]"></span> ab?</p>
+                <select id="pickup-person-select" class="w-full p-2 mb-2 rounded-button">
+                    <option value="">Bitte wählen</option>
+                    <option value="Mutter">Mutter</option>
+                    <option value="Vater">Vater</option>
+                    <option value="Oma">Oma</option>
+                    <option value="Opa">Opa</option>
+                    <option value="Geschwister">Geschwister</option>
+                    <option value="Sonstige">Sonstige</option>
+                </select>
+                <div id="custom-pickup-person-container" class="hidden mb-3">
+                    <input type="text" id="custom-pickup-person-input" placeholder="Name" class="glass-input w-full p-2 rounded-button">
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancel-pickup" class="glass-button px-4 py-2 rounded-button">Abbrechen</button>
+                    <button id="confirm-pickup" class="glass-button-primary px-4 py-2 rounded-button">Bestätigen</button>
+                </div>
+                <div id="pickup-message-box" class="mt-3 text-sm text-center hidden text-[#ff3b30]"></div>
+            </div>
+        </div>
+
+        <script>
+            // DOM Elements
+            const loginScreen = document.getElementById('login-screen');
+            const mainContentScreen = document.getElementById('main-content-screen');
+            const adminContentScreen = document.getElementById('admin-content-screen');
+            const codeDisplay = document.getElementById('code-display');
+            const keypadButtons = document.querySelectorAll('.keypad-button');
+            const logoutButtonMain = document.getElementById('logout-button-main');
+            const logoutButtonAdmin = document.getElementById('logout-button-admin');
+            const messageBox = document.getElementById('message-box');
+            const betreuerNameDisplay = document.getElementById('betreuer-name-display');
+
+            const newUsernameInput = document.getElementById('new-username');
+            const newUserCodeInput = document.getElementById('new-user-code');
+            const newUserStatusSelect = document.getElementById('new-user-status');
+            const addUserButton = document.getElementById('add-user-button');
+            const addUserMessage = document.getElementById('add-user-message');
+            const userListElement = document.getElementById('user-list');
+
+            const unifiedParticipantContainer = document.getElementById('unified-participant-container');
+            const unifiedParticipantList = document.getElementById('unified-participant-list');
+            const noParticipantsMessageUnified = document.getElementById('no-participants-message-unified');
+            const addSiblingBtn = document.getElementById('add-sibling-row-button');
+            const child2Div = document.getElementById('child2-container');
+            const child3Div = document.getElementById('child3-container');
+
+            const actionFeedbackMessage = document.getElementById('action-feedback-message');
+            const participantSearchInput = document.getElementById('participant-search-input');
+            const firstNameFilter = document.getElementById('first-name-filter');
+            const lastNameFilter = document.getElementById('last-name-filter');
+            const resetFiltersButton = document.getElementById('reset-filters-button');
+
+            const deleteModal = document.getElementById('delete-modal');
+            const deleteModalTitle = document.getElementById('delete-modal-title');
+            const deleteModalMessage = document.getElementById('delete-modal-message');
+            const cancelDeleteButton = document.getElementById('cancel-delete');
+            const confirmDeleteButton = document.getElementById('confirm-delete');
+
+            const participantDetailsModal = document.getElementById('participant-details-modal');
+            const detailsModalTitle = document.getElementById('details-modal-title');
+            const detailsFirstNameDisplay = document.getElementById('details-first-name-display');
+            const detailsLastNameDisplay = document.getElementById('details-last-name-display');
+            const detailsStreetDisplay = document.getElementById('details-street-display');
+            const detailsCityDisplay = document.getElementById('details-city-display');
+            const detailsPhoneDisplay = document.getElementById('details-phone-display');
+            const detailsRegtypeDisplay = document.getElementById('details-regtype-display');
+            const detailsPaidDisplay = document.getElementById('details-paid-display');
+            const detailsCanGoHomeAloneDisplay = document.getElementById('details-can-go-home-alone-display');
+            const detailsNoDataDisplay = document.getElementById('details-no-data-display');
+            const detailsFirstNameInput = document.getElementById('details-first-name-input');
+            const detailsLastNameInput = document.getElementById('details-last-name-input');
+            const detailsStreetInput = document.getElementById('details-street-input');
+            const detailsCityInput = document.getElementById('details-city-input');
+            const detailsPhoneInput = document.getElementById('details-phone-input');
+            const detailsRegtypeSelect = document.getElementById('details-regtype-select');
+            const detailsPaidInput = document.getElementById('details-paid-input');
+            const detailsCanGoHomeAloneInput = document.getElementById('details-can-go-home-alone-input');
+            const detailsNoDataInput = document.getElementById('details-no-data-input');
+            const detailsPickedUpBy = document.getElementById('details-picked-up-by');
+            const detailsPickedUpByRow = document.getElementById('details-picked-up-by-row');
+            const closeDetailsModalButton = document.getElementById('close-details-modal');
+            const saveDetailsButton = document.getElementById('save-details-button');
+            const detailsActivityHistory = document.getElementById('details-activity-history');
+            const detailsCommentsList = document.getElementById('details-comments-list');
+            const newCommentText = document.getElementById('new-comment-text');
+            const addCommentButton = document.getElementById('add-comment-button');
+            const noDataWarningDetail = document.getElementById('no-data-warning-detail');
+
+            const pickupModal = document.getElementById('pickup-modal');
+            const pickupParticipantName = document.getElementById('pickup-participant-name');
+            const pickupPersonSelect = document.getElementById('pickup-person-select');
+            const customPickupPersonContainer = document.getElementById('custom-pickup-person-container');
+            const customPickupPersonInput = document.getElementById('custom-pickup-person-input');
+            const cancelPickupButton = document.getElementById('cancel-pickup');
+            const confirmPickupButton = document.getElementById('confirm-pickup');
+            const pickupMessageBox = document.getElementById('pickup-message-box');
+
+            // Family Modal Elements
+            const familyModal = document.getElementById('family-modal');
+            const familyModalTitle = document.getElementById('family-modal-title');
+            const familyModalMessage = document.getElementById('family-modal-message');
+            const familyMembersList = document.getElementById('family-members-list');
+            const cancelFamilyModal = document.getElementById('cancel-family-modal');
+            const confirmFamilyAction = document.getElementById('confirm-family-action');
+
+            const navParticipantManagementButton = document.getElementById('nav-participant-management');
+            const participantManagementSection = document.getElementById('participant-management-section');
+            const newParticipantRegtypeSelect = document.getElementById('new-participant-regtype');
+            const newParticipantStreetInput = document.getElementById('new-participant-street');
+            const newParticipantCityInput = document.getElementById('new-participant-city');
+            const newParticipantPhoneInput = document.getElementById('new-participant-phone');
+            const newParticipantPaidCheckbox = document.getElementById('new-participant-paid');
+            const newParticipantCanGoHomeAloneCheckbox = document.getElementById('new-participant-can-go-home-alone');
+            const addParticipantManualButton = document.getElementById('add-participant-manual-button');
+            const addParticipantManualMessage = document.getElementById('add-participant-manual-message');
+            const importParticipantsFileInput = document.getElementById('import-participants-file-input');
+            const importParticipantsButton = document.getElementById('import-participants-button');
+            const importParticipantsMessage = document.getElementById('import-participants-message');
+            const noDataCheckbox = document.getElementById('no-data-checkbox');
+
+            const controlModeToggle = document.getElementById('control-mode-toggle');
+            const createBackupButton = document.getElementById('create-backup-button');
+            const loadBackupButton = document.getElementById('load-backup-button');
+            const loadBackupInput = document.getElementById('load-backup-input');
+            const removeAllParticipantsButton = document.getElementById('remove-all-participants-button');
+            const removeDailyParticipantsButton = document.getElementById('remove-daily-participants-button');
+            const resetAllParticipantsButton = document.getElementById('reset-all-participants-button');
+
+            const navUserManagementButton = document.getElementById('nav-user-management');
+            const navParticipantOverviewButton = document.getElementById('nav-participant-overview');
+            const navProgramSettingsButton = document.getElementById('nav-program-settings');
+            const userManagementSection = document.getElementById('user-management-section');
+            const programSettingsSection = document.getElementById('program-settings-section');
+            const adminParticipantOverviewSection = document.getElementById('admin-participant-overview-section');
+            const adminNavButtons = document.querySelectorAll('.admin-nav-button');
+            const adminSectionWrapper = document.getElementById('admin-section-wrapper');
+            const adminWelcomeMessage = document.getElementById('admin-welcome-message');
+
+            // Global variables
+            var enteredCode = '';
+            var itemToDelete = null;
+            var activeSwipeItem = null;
+            var initialX = 0;
+            var currentTranslateX = 0;
+            var isSwiping = false;
+            var currentParticipantBeingPickedUp = null;
+            var currentLoggedInUsername = '';
+            var currentLoggedInUserStatus = '';
+            var controlModeActive = false;
+            var currentParticipantInDetailsModal = null;
+            var currentConfirmAction = null;
+            
+            // Family action variables
+            var pendingFamilyAction = null; // 'anmelden' or 'abmelden'
+            var familyMembersListData = []; // Array of {id, name, status, checked}
+
+            // Local Storage Keys
+            const LOCAL_STORAGE_USERS_KEY = 'ferienprogramm_users';
+            const LOCAL_STORAGE_PARTICIPANTS_KEY = 'ferienprogramm_participants';
+            const LOCAL_STORAGE_CONTROL_MODE_KEY = 'ferienprogramm_control_mode';
+            const BACKUP_STORAGE_KEY = 'ferienprogramm_backups';
+            const MAX_BACKUPS = 100;
+
+            let users = [];
+            let participants = [];
+
+            // Helper Functions
+            function showMessage(message, isError = true) {
+                messageBox.textContent = message;
+                messageBox.classList.remove('hidden');
+                setTimeout(() => messageBox.classList.add('hidden'), 3000);
+            }
+
+            function showActionFeedback(message, isSuccess = true) {
+                actionFeedbackMessage.textContent = message;
+                actionFeedbackMessage.style.background = isSuccess ? 'rgba(52,199,89,0.95)' : 'rgba(255,59,48,0.95)';
+                actionFeedbackMessage.classList.add('show');
+                setTimeout(() => actionFeedbackMessage.classList.remove('show'), 2000);
+            }
+
+            function showPickupMessageBox(message, isError = true) {
+                pickupMessageBox.textContent = message;
+                pickupMessageBox.classList.remove('hidden');
+                setTimeout(() => pickupMessageBox.classList.add('hidden'), 3000);
+            }
+
+            function showAdminMessage(messageElement, message, isError = true) {
+                messageElement.textContent = message;
+                messageElement.classList.remove('hidden');
+                setTimeout(() => messageElement.classList.add('hidden'), 3000);
+            }
+
+            function updateCodeDisplay() {
+                codeDisplay.textContent = '*'.repeat(enteredCode.length);
+            }
+
+            // Get last name from full name
+            function getLastName(fullName) {
+                const parts = fullName.split(' ');
+                return parts.slice(1).join(' ') || '';
+            }
+
+            // User Functions
+            function loadUsers() {
+                try {
+                    const stored = localStorage.getItem(LOCAL_STORAGE_USERS_KEY);
+                    if (stored) users = JSON.parse(stored);
+                    else {
+                        users = [
+                            { id: Date.now() + '0', username: 'Betreuer', code: '1111', status: 'Betreuer', active: true },
+                            { id: Date.now() + '1', username: 'Admin', code: '240309', status: 'admin', active: true }
+                        ];
+                        saveUsers();
+                    }
+                } catch(e) { users = []; }
+            }
+
+            function saveUsers() {
+                localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(users));
+                renderUserList();
+            }
+
+            function renderUserList() {
+                userListElement.innerHTML = '';
+                if (users.length === 0) {
+                    userListElement.innerHTML = '<li class="text-center text-[#8e8e93]">Keine Benutzer</li>';
+                    return;
+                }
+                users.forEach(u => {
+                    const li = document.createElement('li');
+                    li.className = `glass-panel p-3 flex justify-between items-center ${!u.active ? 'user-inactive' : ''}`;
+                    li.innerHTML = `
+                        <div>
+                            <span class="font-semibold">${u.username}</span> 
+                            <span class="text-xs text-[#8e8e93]">(${'*'.repeat(u.code.length)})</span> - ${u.status}
+                            ${!u.active ? ' (inaktiv)' : ''}
+                        </div>
+                        <div class="flex space-x-2">
+                            <button data-id="${u.id}" class="toggle-user-active-button text-[#ff9500] text-sm rounded-button px-2 py-1 bg-white/50">${u.active ? 'Deaktivieren' : 'Aktivieren'}</button>
+                            <button data-id="${u.id}" class="change-user-status-button text-[#007aff] text-sm rounded-button px-2 py-1 bg-white/50">${u.status === 'admin' ? '→ Betreuer' : '→ Admin'}</button>
+                            <button data-id="${u.id}" data-username="${u.username}" data-type="user" class="delete-item-button text-[#ff3b30] text-sm rounded-button px-2 py-1 bg-white/50">Löschen</button>
+                        </div>
+                    `;
+                    userListElement.appendChild(li);
+                });
+            }
+
+            // Participant Functions
+            function loadParticipants() {
+                try {
+                    const stored = localStorage.getItem(LOCAL_STORAGE_PARTICIPANTS_KEY);
+                    if (stored) {
+                        participants = JSON.parse(stored).map(p => ({
+                            ...p,
+                            savedStatus: p.status,
+                            registrationType: p.registrationType || 'Tagesanmeldung',
+                            street: p.street || '',
+                            city: p.city || '',
+                            phone: p.phone || '',
+                            paid: p.paid !== undefined ? p.paid : false,
+                            canGoHomeAlone: p.canGoHomeAlone !== undefined ? p.canGoHomeAlone : false,
+                            noData: p.noData || false,
+                            pickedUpBy: p.pickedUpBy || '',
+                            activityHistory: p.activityHistory || [],
+                            comments: p.comments || []
+                        }));
+                    } else {
+                        participants = [
+                            { id: Date.now() + 'A', name: 'Lea Schneider', status: 'available', registrationType: 'Tagesanmeldung', street: 'Musterweg 1', city: 'Musterstadt', phone: '01761234567', paid: true, canGoHomeAlone: false, noData: false, pickedUpBy: '', activityHistory: [], comments: [] },
+                            { id: Date.now() + 'B', name: 'Max Mustermann', status: 'available', registrationType: 'Wochenanmeldung', street: 'Beispielallee 5', city: 'Beispielort', phone: '01519876543', paid: false, canGoHomeAlone: true, noData: false, pickedUpBy: '', activityHistory: [], comments: [] }
+                        ];
+                        saveParticipants();
+                    }
+                } catch(e) { participants = []; }
+            }
+
+            function saveParticipants() {
+                const toSave = participants.map(p => ({
+                    id: p.id, name: p.name, status: p.status, registrationType: p.registrationType,
+                    street: p.street, city: p.city, phone: p.phone, paid: p.paid,
+                    canGoHomeAlone: p.canGoHomeAlone, noData: p.noData, pickedUpBy: p.pickedUpBy,
+                    activityHistory: p.activityHistory, comments: p.comments
+                }));
+                localStorage.setItem(LOCAL_STORAGE_PARTICIPANTS_KEY, JSON.stringify(toSave));
+                renderParticipantList();
+            }
+
+            function loadControlMode() {
+                controlModeActive = localStorage.getItem(LOCAL_STORAGE_CONTROL_MODE_KEY) === 'true';
+                if (controlModeToggle) controlModeToggle.checked = controlModeActive;
+            }
+
+            function saveControlMode() {
+                localStorage.setItem(LOCAL_STORAGE_CONTROL_MODE_KEY, controlModeActive);
+            }
+
+            // Swipe Functions
+            function closeAllSwipedItems(exclude = null) {
+                document.querySelectorAll('.participant-item-container.swiped').forEach(item => {
+                    const wrapper = item.querySelector('.participant-content-wrapper');
+                    if (wrapper && wrapper !== exclude) wrapper.style.transform = 'translateX(0px)';
+                    item.classList.remove('swiped');
+                });
+            }
+
+            function handlePointerDown(e) {
+                if (e.button !== 0 && e.pointerType !== 'touch') return;
+                closeAllSwipedItems(this);
+                activeSwipeItem = this;
+                isSwiping = true;
+                initialX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+                currentTranslateX = 0;
+                this.setPointerCapture(e.pointerId);
+            }
+
+            function handlePointerMove(e) {
+                if (!isSwiping || !activeSwipeItem) return;
+                const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+                const deltaX = clientX - initialX;
+                const buttonWidth = 120;
+                currentTranslateX = Math.min(0, deltaX);
+                currentTranslateX = Math.max(-buttonWidth, currentTranslateX);
+                activeSwipeItem.style.transform = `translateX(${currentTranslateX}px)`;
+            }
+
+            function handlePointerUp(e) {
+                if (!isSwiping || !activeSwipeItem) return;
+                isSwiping = false;
+                activeSwipeItem.releasePointerCapture(e.pointerId);
+                const wrapper = activeSwipeItem;
+                const container = activeSwipeItem.parentNode;
+                const threshold = 40;
+                const buttonWidth = 120;
+                if (currentTranslateX < -threshold) {
+                    wrapper.style.transform = `translateX(-${buttonWidth}px)`;
+                    container.classList.add('swiped');
+                } else {
+                    wrapper.style.transform = 'translateX(0px)';
+                    container.classList.remove('swiped');
+                }
+                currentTranslateX = 0;
+                if (activeSwipeItem === this) activeSwipeItem = null;
+            }
+
+            function handlePointerCancel(e) {
+                if (!isSwiping || !activeSwipeItem) return;
+                isSwiping = false;
+                activeSwipeItem.releasePointerCapture(e.pointerId);
+                activeSwipeItem.style.transform = 'translateX(0px)';
+                activeSwipeItem.parentNode.classList.remove('swiped');
+                currentTranslateX = 0;
+                if (activeSwipeItem === this) activeSwipeItem = null;
+            }
+
+            // Family Modal Functions
+            function showFamilyModal(lastName, action, participantsWithSameLastName) {
+                pendingFamilyAction = action;
+                familyModalTitle.textContent = action === 'anmelden' ? 'Familienmitglieder anmelden' : 'Familienmitglieder abmelden';
+                familyModalMessage.innerHTML = `Folgende Kinder mit dem Nachnamen <strong>${lastName}</strong> wurden gefunden. Bitte wählen Sie aus, welche Sie ${action === 'anmelden' ? 'anmelden' : 'abmelden'} möchten:`;
+                
+                familyMembersListData = participantsWithSameLastName.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    status: p.status,
+                    checked: (action === 'anmelden' && p.status === 'available') || (action === 'abmelden' && p.status === 'signedIn')
+                }));
+                
+                renderFamilyMembersList();
+                familyModal.classList.remove('hidden');
+            }
+
+            function renderFamilyMembersList() {
+                familyMembersList.innerHTML = '';
+                familyMembersListData.forEach(member => {
+                    const isApplicable = (pendingFamilyAction === 'anmelden' && member.status === 'available') || 
+                                        (pendingFamilyAction === 'abmelden' && member.status === 'signedIn');
+                    const div = document.createElement('div');
+                    div.className = 'family-modal-item flex items-center justify-between';
+                    div.innerHTML = `
+                        <div>
+                            <span class="font-medium">${member.name}</span>
+                            <span class="text-xs text-[#8e8e93] ml-2">${member.status === 'signedIn' ? 'angemeldet' : 'abgemeldet'}</span>
+                        </div>
+                        ${isApplicable ? 
+                            `<input type="checkbox" data-id="${member.id}" class="family-checkbox h-5 w-5 rounded" ${member.checked ? 'checked' : ''}>` : 
+                            `<span class="text-xs text-[#8e8e93]">${pendingFamilyAction === 'anmelden' ? 'bereits angemeldet' : 'bereits abgemeldet'}</span>`
+                        }
+                    `;
+                    familyMembersList.appendChild(div);
+                });
+                
+                // Add event listeners to checkboxes
+                document.querySelectorAll('.family-checkbox').forEach(cb => {
+                    cb.addEventListener('change', (e) => {
+                        const id = e.target.dataset.id;
+                        const member = familyMembersListData.find(m => m.id === id);
+                        if (member) member.checked = e.target.checked;
+                    });
+                });
+            }
+
+            function executeFamilyAction() {
+                const selectedMembers = familyMembersListData.filter(m => m.checked);
+                if (selectedMembers.length === 0) {
+                    showActionFeedback('Keine Familienmitglieder ausgewählt.', false);
+                    familyModal.classList.add('hidden');
+                    return;
+                }
+                
+                let successCount = 0;
+                selectedMembers.forEach(member => {
+                    const participantIndex = participants.findIndex(p => p.id === member.id);
+                    if (participantIndex > -1) {
+                        const p = participants[participantIndex];
+                        if (pendingFamilyAction === 'anmelden' && p.status === 'available') {
+                            p.status = 'signedIn';
+                            p.pickedUpBy = '';
+                            p.activityHistory.push({ type: 'Angemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt' });
+                            successCount++;
+                        } else if (pendingFamilyAction === 'abmelden' && p.status === 'signedIn') {
+                            p.status = 'available';
+                            p.pickedUpBy = 'Über Familienabmeldung';
+                            p.activityHistory.push({ type: 'Abgemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt', pickup: 'Familienabmeldung' });
+                            successCount++;
+                        }
+                        participants[participantIndex] = p;
+                    }
+                });
+                
+                if (successCount > 0) {
+                    saveParticipants();
+                    showActionFeedback(`${successCount} ${pendingFamilyAction === 'anmelden' ? 'angemeldet' : 'abgemeldet'}!`, true);
+                } else {
+                    showActionFeedback(`Keine Änderungen vorgenommen.`, false);
+                }
+                familyModal.classList.add('hidden');
+                pendingFamilyAction = null;
+                familyMembersListData = [];
+            }
+
+            function renderParticipantList() {
+                if (!unifiedParticipantList) return;
+                unifiedParticipantList.innerHTML = '';
+
+                const searchTerm = participantSearchInput?.value.toLowerCase() || '';
+                const firstFilter = firstNameFilter?.value || '';
+                const lastFilter = lastNameFilter?.value || '';
+
+                const filtered = [...participants].sort((a,b) => (a.name.split(' ')[0] || '').localeCompare(b.name.split(' ')[0] || '')).filter(p => {
+                    const parts = p.name.split(' ');
+                    const first = parts[0] || '';
+                    const last = parts.slice(1).join(' ') || '';
+                    return p.name.toLowerCase().includes(searchTerm) &&
+                        (!firstFilter || (first && first.charAt(0).toUpperCase() === firstFilter)) &&
+                        (!lastFilter || (last && last.charAt(0).toUpperCase() === lastFilter));
+                });
+
+                const signedCount = filtered.filter(p => p.status !== 'available').length;
+                const countSpan = document.getElementById('participant-count');
+                if (countSpan) countSpan.textContent = signedCount;
+
+                let hasAny = false;
+                filtered.forEach(p => {
+                    const item = document.createElement('li');
+                    item.className = `participant-item-container ${p.status}`;
+                    const actionText = p.status === 'available' ? 'Anmelden' : 'Abmelden';
+                    const btnClass = p.status === 'available' ? 'anmelden-button' : 'abmelden-button';
+                    let dotClass = '';
+                    if (p.status === 'signedIn') dotClass = 'status-dot-green';
+                    else if (p.activityHistory.length === 0) dotClass = 'status-dot-gray';
+                    else dotClass = 'status-dot-red';
+                    const aloneText = p.canGoHomeAlone ? 'Ja' : 'Nein';
+                    const nameColor = (controlModeActive && !p.paid) ? 'text-[#ff3b30]' : '';
+                    const commentBadge = (p.comments?.length > 0) ? '<span class="comment-icon" title="Kommentare vorhanden">C</span>' : '';
+                    
+                    item.innerHTML = `
+                        <div class="participant-action-button-container">
+                            <button class="participant-action-button ${btnClass}" data-action="${actionText.toLowerCase()}" data-id="${p.id}">${actionText}</button>
+                        </div>
+                        <div class="participant-content-wrapper">
+                            <div class="participant-left">
+                                <span class="status-dot ${dotClass}"></span>
+                                <span class="participant-name ${nameColor}">${p.name}</span>
+                            </div>
+                            <div class="participant-right">
+                                <span class="participant-meta">${p.registrationType} | Alleine: ${aloneText}</span>
+                                ${commentBadge}
+                                <span class="info-icon" data-id="${p.id}">i</span>
+                            </div>
+                        </div>
+                    `;
+                    unifiedParticipantList.appendChild(item);
+                    hasAny = true;
+                    const wrapper = item.querySelector('.participant-content-wrapper');
+                    wrapper.addEventListener('pointerdown', handlePointerDown);
+                    wrapper.addEventListener('pointermove', handlePointerMove);
+                    wrapper.addEventListener('pointerup', handlePointerUp);
+                    wrapper.addEventListener('pointercancel', handlePointerCancel);
+                });
+                if (noParticipantsMessageUnified) noParticipantsMessageUnified.classList.toggle('hidden', hasAny);
+            }
+
+            function setAdminEditMode(isEditing) {
+                const displays = [detailsFirstNameDisplay, detailsLastNameDisplay, detailsStreetDisplay, detailsCityDisplay, detailsPhoneDisplay, detailsRegtypeDisplay, detailsPaidDisplay, detailsCanGoHomeAloneDisplay, detailsNoDataDisplay];
+                const inputs = [detailsFirstNameInput, detailsLastNameInput, detailsStreetInput, detailsCityInput, detailsPhoneInput, detailsRegtypeSelect, detailsPaidInput, detailsCanGoHomeAloneInput, detailsNoDataInput];
+                displays.forEach(el => { if(el) el.classList.toggle('hidden', isEditing); });
+                inputs.forEach(el => { if(el) el.classList.toggle('hidden', !isEditing); });
+                if (saveDetailsButton) saveDetailsButton.classList.toggle('hidden', !isEditing);
+            }
+
+            function showConfirmationModal(title, msg, callback) {
+                deleteModalTitle.textContent = title;
+                deleteModalMessage.innerHTML = msg;
+                deleteModal.classList.remove('hidden');
+                currentConfirmAction = callback;
+            }
+
+            function showAdminSection(sectionId) {
+                const sections = [userManagementSection, participantManagementSection, adminParticipantOverviewSection, programSettingsSection];
+                sections.forEach(s => { if(s) s.classList.add('hidden'); });
+                if (adminWelcomeMessage) adminWelcomeMessage.classList.add('hidden');
+                adminNavButtons.forEach(b => b.classList.remove('active'));
+                if (unifiedParticipantContainer) unifiedParticipantContainer.classList.add('hidden');
+                
+                if (sectionId && adminSectionWrapper) {
+                    adminSectionWrapper.classList.remove('hidden');
+                    if (sectionId === 'user-management-section' && userManagementSection) {
+                        userManagementSection.classList.remove('hidden');
+                        if (navUserManagementButton) navUserManagementButton.classList.add('active');
+                    } else if (sectionId === 'participant-management-section' && participantManagementSection) {
+                        participantManagementSection.classList.remove('hidden');
+                        if (navParticipantManagementButton) navParticipantManagementButton.classList.add('active');
+                    } else if (sectionId === 'admin-participant-overview-section' && adminParticipantOverviewSection) {
+                        adminParticipantOverviewSection.classList.remove('hidden');
+                        if (navParticipantOverviewButton) navParticipantOverviewButton.classList.add('active');
+                        if (unifiedParticipantContainer) unifiedParticipantContainer.classList.remove('hidden');
+                        renderParticipantList();
+                    } else if (sectionId === 'program-settings-section' && programSettingsSection) {
+                        programSettingsSection.classList.remove('hidden');
+                        if (navProgramSettingsButton) navProgramSettingsButton.classList.add('active');
+                    }
+                } else if (adminSectionWrapper && adminWelcomeMessage) {
+                    adminSectionWrapper.classList.add('hidden');
+                    adminWelcomeMessage.classList.remove('hidden');
+                }
+            }
+
+            function handleLogout() {
+                if (mainContentScreen) mainContentScreen.classList.add('hidden');
+                if (adminContentScreen) adminContentScreen.classList.add('hidden');
+                if (unifiedParticipantContainer) unifiedParticipantContainer.classList.add('hidden');
+                if (instructionsScreen) instructionsScreen.classList.add('hidden');
+                if (loginScreen) loginScreen.classList.remove('hidden');
+                enteredCode = '';
+                updateCodeDisplay();
+                currentLoggedInUsername = '';
+                currentLoggedInUserStatus = '';
+                if (messageBox) messageBox.classList.add('hidden');
+                resetInactivityTimer();
+            }
+
+            // Backup
+            function createBackup(manual = false) {
+                const data = localStorage.getItem(LOCAL_STORAGE_PARTICIPANTS_KEY);
+                if (!data) return;
+                const backups = JSON.parse(localStorage.getItem(BACKUP_STORAGE_KEY) || '[]');
+                backups.push({ timestamp: new Date().toISOString(), data });
+                while(backups.length > MAX_BACKUPS) backups.shift();
+                localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(backups));
+                if (manual) {
+                    const blob = new Blob([data], { type: 'application/json' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `backup_${Date.now()}.json`;
+                    a.click();
+                    showMessage("Sicherung erstellt", false);
+                }
+            }
+
+            // Inactivity Timer
+            let inactivityTimer;
+            const INACTIVITY_LIMIT = 2 * 60 * 1000;
+            function resetInactivityTimer() {
+                clearTimeout(inactivityTimer);
+                if (loginScreen && !loginScreen.classList.contains('hidden')) return;
+                inactivityTimer = setTimeout(() => {
+                    handleLogout();
+                    showMessage("Wegen Inaktivität abgemeldet", true);
+                }, INACTIVITY_LIMIT);
+            }
+
+            // Event Listeners
+            keypadButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const val = btn.dataset.value;
+                    const action = btn.dataset.action;
+                    messageBox.classList.add('hidden');
+                    if (val) { if (enteredCode.length < 6) enteredCode += val; }
+                    else if (action === 'clear') enteredCode = enteredCode.slice(0, -1);
+                    else if (action === 'enter') {
+                        const user = users.find(u => u.code === enteredCode && u.active !== false);
+                        if (user) {
+                            loginScreen.classList.add('hidden');
+                            enteredCode = '';
+                            updateCodeDisplay();
+                            currentLoggedInUsername = user.username;
+                            currentLoggedInUserStatus = user.status;
+                            if (user.status === 'admin') {
+                                mainContentScreen.classList.add('hidden');
+                                adminContentScreen.classList.remove('hidden');
+                                showAdminSection('');
+                                unifiedParticipantContainer.classList.add('hidden');
+                                showMessage(`Willkommen Admin ${user.username}`, false);
+                            } else {
+                                adminContentScreen.classList.add('hidden');
+                                mainContentScreen.classList.remove('hidden');
+                                unifiedParticipantContainer.classList.remove('hidden');
+                                betreuerNameDisplay.textContent = user.username;
+                                renderParticipantList();
+                            }
+                        } else {
+                            showMessage('Falscher Code oder Benutzer inaktiv');
+                            enteredCode = '';
+                        }
+                    }
+                    updateCodeDisplay();
+                    resetInactivityTimer();
+                });
+            });
+
+            addUserButton?.addEventListener('click', () => {
+                const name = newUsernameInput?.value.trim();
+                const code = newUserCodeInput?.value.trim();
+                const status = newUserStatusSelect?.value;
+                if (!name || !code) { showAdminMessage(addUserMessage, "Name und Code erforderlich", true); return; }
+                if (users.some(u => u.code === code)) { showAdminMessage(addUserMessage, "Code existiert", true); return; }
+                users.push({ id: Date.now().toString(), username: name, code, status, active: true });
+                saveUsers();
+                showAdminMessage(addUserMessage, "Benutzer hinzugefügt", false);
+                newUsernameInput.value = '';
+                newUserCodeInput.value = '';
+            });
+
+            userListElement?.addEventListener('click', (e) => {
+                const target = e.target;
+                const id = target.dataset.id;
+                if (target.classList.contains('toggle-user-active-button')) {
+                    const idx = users.findIndex(u => u.id === id);
+                    if (idx > -1) {
+                        users[idx].active = !users[idx].active;
+                        saveUsers();
+                        showMessage(`Benutzer ${users[idx].username} wurde ${users[idx].active ? 'aktiviert' : 'deaktiviert'}`, false);
+                    }
+                } else if (target.classList.contains('change-user-status-button')) {
+                    const idx = users.findIndex(u => u.id === id);
+                    if (idx > -1) {
+                        users[idx].status = users[idx].status === 'admin' ? 'Betreuer' : 'admin';
+                        saveUsers();
+                        showMessage("Status geändert", false);
+                    }
+                } else if (target.classList.contains('delete-item-button') && target.dataset.type === 'user') {
+                    const name = target.dataset.username;
+                    showConfirmationModal('Benutzer löschen', `${name} wirklich löschen?`, () => {
+                        users = users.filter(u => u.id !== id);
+                        saveUsers();
+                        showMessage(`Benutzer ${name} gelöscht`, false);
+                    });
+                }
+            });
+
+            logoutButtonMain?.addEventListener('click', () => { closeAllSwipedItems(); handleLogout(); showMessage("Abgemeldet", false); });
+            logoutButtonAdmin?.addEventListener('click', () => { handleLogout(); showMessage("Abgemeldet", false); });
+
+            navUserManagementButton?.addEventListener('click', () => showAdminSection('user-management-section'));
+            navParticipantManagementButton?.addEventListener('click', () => showAdminSection('participant-management-section'));
+            navParticipantOverviewButton?.addEventListener('click', () => showAdminSection('admin-participant-overview-section'));
+            navProgramSettingsButton?.addEventListener('click', () => showAdminSection('program-settings-section'));
+
+            addSiblingBtn?.addEventListener('click', () => {
+                if (child2Div?.classList.contains('hidden')) child2Div.classList.remove('hidden');
+                else if (child3Div?.classList.contains('hidden')) { child3Div.classList.remove('hidden'); addSiblingBtn.classList.add('hidden'); }
+            });
+
+            noDataCheckbox?.addEventListener('change', function() {
+                const disabled = this.checked;
+                if (newParticipantStreetInput) newParticipantStreetInput.disabled = disabled;
+                if (newParticipantCityInput) newParticipantCityInput.disabled = disabled;
+                if (newParticipantPhoneInput) newParticipantPhoneInput.disabled = disabled;
+                if (disabled) {
+                    if (newParticipantStreetInput) newParticipantStreetInput.value = '';
+                    if (newParticipantCityInput) newParticipantCityInput.value = '';
+                    if (newParticipantPhoneInput) newParticipantPhoneInput.value = '';
+                }
+            });
+
+            // Family Modal Event Listeners
+            cancelFamilyModal?.addEventListener('click', () => {
+                familyModal.classList.add('hidden');
+                pendingFamilyAction = null;
+                familyMembersListData = [];
+            });
+            
+            confirmFamilyAction?.addEventListener('click', executeFamilyAction);
+
+            // Global click handler
+            document.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target.classList?.contains('participant-action-button')) {
+                    const pid = target.dataset.id;
+                    const action = target.dataset.action;
+                    const idx = participants.findIndex(p => p.id === pid);
+                    if (idx === -1) return;
+                    const p = participants[idx];
+                    closeAllSwipedItems();
+                    
+                    // Check for family members with same last name
+                    const lastName = getLastName(p.name);
+                    const familyMembers = participants.filter(part => 
+                        part.id !== p.id && getLastName(part.name).toLowerCase() === lastName.toLowerCase()
+                    );
+                    
+                    if (familyMembers.length > 0) {
+                        // Show family modal
+                        const allFamily = [p, ...familyMembers];
+                        showFamilyModal(lastName, action, allFamily);
+                    } else {
+                        // Single action
+                        if (action === 'anmelden' && p.status === 'available') {
+                            p.status = 'signedIn';
+                            p.pickedUpBy = '';
+                            p.activityHistory.push({ type: 'Angemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt' });
+                            showActionFeedback(`${p.name} angemeldet`, true);
+                            saveParticipants();
+                        } else if (action === 'abmelden' && p.status === 'signedIn') {
+                            if (!p.canGoHomeAlone) {
+                                currentParticipantBeingPickedUp = p;
+                                pickupParticipantName.textContent = p.name;
+                                pickupPersonSelect.value = "";
+                                customPickupPersonInput.value = "";
+                                customPickupPersonContainer.classList.add('hidden');
+                                pickupMessageBox.classList.add('hidden');
+                                pickupModal.classList.remove('hidden');
+                            } else {
+                                p.status = 'available';
+                                p.pickedUpBy = 'Alleine nach Hause';
+                                p.activityHistory.push({ type: 'Abgemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt', pickup: 'Alleine nach Hause' });
+                                showActionFeedback(`${p.name} abgemeldet`, false);
+                                saveParticipants();
+                            }
+                        }
+                    }
+                    resetInactivityTimer();
+                } else if (target.classList?.contains('info-icon')) {
+                    const pid = target.dataset.id;
+                    currentParticipantInDetailsModal = participants.find(p => p.id === pid);
+                    if (currentParticipantInDetailsModal) {
+                        const parts = currentParticipantInDetailsModal.name.split(' ');
+                        const first = parts.shift() || '';
+                        const last = parts.join(' ') || '';
+                        detailsFirstNameDisplay.textContent = first;
+                        detailsLastNameDisplay.textContent = last;
+                        detailsStreetDisplay.textContent = currentParticipantInDetailsModal.noData ? '---' : (currentParticipantInDetailsModal.street || 'N/A');
+                        detailsCityDisplay.textContent = currentParticipantInDetailsModal.noData ? '---' : (currentParticipantInDetailsModal.city || 'N/A');
+                        detailsPhoneDisplay.textContent = currentParticipantInDetailsModal.noData ? '---' : (currentParticipantInDetailsModal.phone || 'N/A');
+                        detailsRegtypeDisplay.textContent = currentParticipantInDetailsModal.registrationType;
+                        detailsPaidDisplay.textContent = currentParticipantInDetailsModal.paid ? 'Ja' : 'Nein';
+                        detailsCanGoHomeAloneDisplay.textContent = currentParticipantInDetailsModal.canGoHomeAlone ? 'Ja' : 'Nein';
+                        detailsNoDataDisplay.textContent = currentParticipantInDetailsModal.noData ? 'Ja' : 'Nein';
+                        
+                        if (noDataWarningDetail) {
+                            if (currentParticipantInDetailsModal.noData) noDataWarningDetail.classList.remove('hidden');
+                            else noDataWarningDetail.classList.add('hidden');
+                        }
+                        
+                        if (currentParticipantInDetailsModal.pickedUpBy) {
+                            detailsPickedUpBy.textContent = currentParticipantInDetailsModal.pickedUpBy;
+                            detailsPickedUpByRow?.classList.remove('hidden');
+                        } else detailsPickedUpByRow?.classList.add('hidden');
+                        
+                        detailsFirstNameInput.value = first;
+                        detailsLastNameInput.value = last;
+                        detailsStreetInput.value = currentParticipantInDetailsModal.street || '';
+                        detailsCityInput.value = currentParticipantInDetailsModal.city || '';
+                        detailsPhoneInput.value = currentParticipantInDetailsModal.phone || '';
+                        detailsRegtypeSelect.value = currentParticipantInDetailsModal.registrationType;
+                        detailsPaidInput.checked = currentParticipantInDetailsModal.paid;
+                        detailsCanGoHomeAloneInput.checked = currentParticipantInDetailsModal.canGoHomeAlone;
+                        detailsNoDataInput.checked = currentParticipantInDetailsModal.noData || false;
+                        
+                        const noDataActive = currentParticipantInDetailsModal.noData;
+                        if (detailsStreetInput) detailsStreetInput.disabled = noDataActive;
+                        if (detailsCityInput) detailsCityInput.disabled = noDataActive;
+                        if (detailsPhoneInput) detailsPhoneInput.disabled = noDataActive;
+                        
+                        const isAdmin = currentLoggedInUserStatus === 'admin';
+                        setAdminEditMode(isAdmin);
+                        
+                        detailsActivityHistory.innerHTML = '';
+                        if (currentParticipantInDetailsModal.activityHistory?.length) {
+                            currentParticipantInDetailsModal.activityHistory.forEach(h => {
+                                const li = document.createElement('li');
+                                li.textContent = `${h.type} um ${h.time}${h.by ? ` durch ${h.by}` : ''}`;
+                                detailsActivityHistory.appendChild(li);
+                            });
+                        } else detailsActivityHistory.innerHTML = '<li class="text-[#8e8e93]">Keine Aktivitäten</li>';
+                        
+                        detailsCommentsList.innerHTML = '';
+                        if (currentParticipantInDetailsModal.comments?.length) {
+                            currentParticipantInDetailsModal.comments.forEach(c => {
+                                const p = document.createElement('p');
+                                p.className = 'text-sm text-[#6c6c70]';
+                                p.innerHTML = `<strong>${c.by}</strong> (${c.timestamp}): ${c.text}`;
+                                detailsCommentsList.appendChild(p);
+                            });
+                        } else detailsCommentsList.innerHTML = '<p class="text-[#8e8e93]">Keine Kommentare</p>';
+                        
+                        newCommentText.value = '';
+                        participantDetailsModal.classList.remove('hidden');
+                    }
+                    resetInactivityTimer();
+                }
+            });
+
+            closeDetailsModalButton?.addEventListener('click', () => participantDetailsModal.classList.add('hidden'));
+            saveDetailsButton?.addEventListener('click', () => {
+                if (!currentParticipantInDetailsModal || currentLoggedInUserStatus !== 'admin') return;
+                const idx = participants.findIndex(p => p.id === currentParticipantInDetailsModal.id);
+                if (idx === -1) return;
+                currentParticipantInDetailsModal.name = `${detailsFirstNameInput.value.trim()} ${detailsLastNameInput.value.trim()}`.trim();
+                currentParticipantInDetailsModal.street = detailsStreetInput.value.trim();
+                currentParticipantInDetailsModal.city = detailsCityInput.value.trim();
+                currentParticipantInDetailsModal.phone = detailsPhoneInput.value.trim();
+                currentParticipantInDetailsModal.registrationType = detailsRegtypeSelect.value;
+                currentParticipantInDetailsModal.paid = detailsPaidInput.checked;
+                currentParticipantInDetailsModal.canGoHomeAlone = detailsCanGoHomeAloneInput.checked;
+                currentParticipantInDetailsModal.noData = detailsNoDataInput.checked;
+                participants[idx] = currentParticipantInDetailsModal;
+                saveParticipants();
+                showActionFeedback("Details gespeichert", true);
+                participantDetailsModal.classList.add('hidden');
+            });
+
+            addCommentButton?.addEventListener('click', () => {
+                const text = newCommentText?.value.trim();
+                if (!text || !currentParticipantInDetailsModal) return;
+                currentParticipantInDetailsModal.comments.push({
+                    text, timestamp: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt'
+                });
+                saveParticipants();
+                const p = document.createElement('p');
+                p.className = 'text-sm text-[#6c6c70]';
+                p.innerHTML = `<strong>${currentLoggedInUsername || 'Unbekannt'}</strong> (${new Date().toLocaleString('de-DE')}): ${text}`;
+                detailsCommentsList.appendChild(p);
+                newCommentText.value = '';
+                showActionFeedback("Kommentar hinzugefügt", true);
+            });
+
+            pickupPersonSelect?.addEventListener('change', (e) => {
+                if (e.target.value === 'Sonstige') customPickupPersonContainer?.classList.remove('hidden');
+                else customPickupPersonContainer?.classList.add('hidden');
+            });
+
+            confirmPickupButton?.addEventListener('click', () => {
+                let person = pickupPersonSelect.value;
+                if (person === 'Sonstige') person = customPickupPersonInput?.value.trim();
+                if (!person) { showPickupMessageBox("Bitte Person angeben"); return; }
+                if (currentParticipantBeingPickedUp) {
+                    const idx = participants.findIndex(p => p.id === currentParticipantBeingPickedUp.id);
+                    if (idx > -1) {
+                        participants[idx].status = 'available';
+                        participants[idx].pickedUpBy = person;
+                        participants[idx].activityHistory.push({ type: 'Abgemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt', pickup: person });
+                        showActionFeedback(`${currentParticipantBeingPickedUp.name} von ${person} abgeholt`, false);
+                        saveParticipants();
+                    }
+                }
+                pickupModal.classList.add('hidden');
+                currentParticipantBeingPickedUp = null;
+            });
+
+            cancelPickupButton?.addEventListener('click', () => {
+                pickupModal.classList.add('hidden');
+                currentParticipantBeingPickedUp = null;
+            });
+
+            cancelDeleteButton?.addEventListener('click', () => deleteModal.classList.add('hidden'));
+            confirmDeleteButton?.addEventListener('click', () => {
+                if (currentConfirmAction) currentConfirmAction();
+                deleteModal.classList.add('hidden');
+                currentConfirmAction = null;
+            });
+
+            importParticipantsButton?.addEventListener('click', () => {
+                const file = importParticipantsFileInput?.files[0];
+                if (!file) { showAdminMessage(importParticipantsMessage, "Datei wählen", true); return; }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const data = new Uint8Array(ev.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    if (!rows.length) return;
+                    const headers = rows[0].map(h => String(h).trim());
+                    let count = 0;
+                    for (let i = 1; i < rows.length; i++) {
+                        const vals = rows[i];
+                        if (vals.length >= 7) {
+                            const nameIdx = headers.indexOf('Name');
+                            const vornameIdx = headers.indexOf('Vorname');
+                            const strIdx = headers.indexOf('Straße');
+                            const ortIdx = headers.indexOf('Ort');
+                            const telIdx = headers.indexOf('Tel.');
+                            const alleinIdx = headers.indexOf('Darf alleine nach Hause');
+                            const bezahltIdx = headers.indexOf('Bezahlt');
+                            const regIdx = headers.indexOf('Anmeldeart');
+                            if (nameIdx !== -1 && vornameIdx !== -1) {
+                                const newP = {
+                                    id: Date.now() + '-' + i,
+                                    name: `${vals[vornameIdx]} ${vals[nameIdx]}`.trim(),
+                                    status: 'available',
+                                    registrationType: (regIdx !== -1 && vals[regIdx] && ['Tagesanmeldung','Wochenanmeldung'].includes(String(vals[regIdx]))) ? String(vals[regIdx]) : 'Tagesanmeldung',
+                                    street: strIdx !== -1 ? (vals[strIdx] || '') : '',
+                                    city: ortIdx !== -1 ? (vals[ortIdx] || '') : '',
+                                    phone: telIdx !== -1 ? String(vals[telIdx] || '') : '',
+                                    paid: bezahltIdx !== -1 ? (String(vals[bezahltIdx]).toLowerCase() === 'ja' || String(vals[bezahltIdx]).toLowerCase() === 'true') : false,
+                                    canGoHomeAlone: alleinIdx !== -1 ? (String(vals[alleinIdx]).toLowerCase() === 'ja' || String(vals[alleinIdx]).toLowerCase() === 'true') : false,
+                                    noData: false,
+                                    pickedUpBy: '',
+                                    activityHistory: [],
+                                    comments: []
+                                };
+                                if (!participants.some(p => p.name.toLowerCase() === newP.name.toLowerCase())) {
+                                    participants.push(newP);
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                    if (count) { saveParticipants(); showAdminMessage(importParticipantsMessage, `${count} importiert`, false); }
+                    else showAdminMessage(importParticipantsMessage, "Keine neuen", true);
+                };
+                reader.readAsArrayBuffer(file);
+            });
+
+            addParticipantManualButton?.addEventListener('click', () => {
+                const first = document.getElementById('child1-first-name')?.value.trim();
+                const last = document.getElementById('child1-last-name')?.value.trim();
+                if (!first || !last) { showAdminMessage(addParticipantManualMessage, "Vor- und Nachname erforderlich", true); return; }
+                const noData = noDataCheckbox?.checked || false;
+                const newP = {
+                    id: Date.now().toString(),
+                    name: `${first} ${last}`,
+                    status: 'available',
+                    registrationType: newParticipantRegtypeSelect?.value || 'Tagesanmeldung',
+                    street: noData ? '' : (newParticipantStreetInput?.value.trim() || ''),
+                    city: noData ? '' : (newParticipantCityInput?.value.trim() || ''),
+                    phone: noData ? '' : (newParticipantPhoneInput?.value.trim() || ''),
+                    paid: newParticipantPaidCheckbox?.checked || false,
+                    canGoHomeAlone: newParticipantCanGoHomeAloneCheckbox?.checked || false,
+                    noData: noData,
+                    pickedUpBy: '',
+                    activityHistory: [],
+                    comments: []
+                };
+                participants.push(newP);
+                saveParticipants();
+                showAdminMessage(addParticipantManualMessage, `${first} ${last} hinzugefügt`, false);
+                document.getElementById('child1-first-name').value = '';
+                document.getElementById('child1-last-name').value = '';
+            });
+
+            const addAndSignin = document.getElementById('add-and-signin-participant-button');
+            addAndSignin?.addEventListener('click', () => {
+                const first = document.getElementById('child1-first-name')?.value.trim();
+                const last = document.getElementById('child1-last-name')?.value.trim();
+                if (!first || !last) { showAdminMessage(addParticipantManualMessage, "Vor- und Nachname erforderlich", true); return; }
+                const noData = noDataCheckbox?.checked || false;
+                const newP = {
+                    id: Date.now().toString(),
+                    name: `${first} ${last}`,
+                    status: 'signedIn',
+                    registrationType: newParticipantRegtypeSelect?.value || 'Tagesanmeldung',
+                    street: noData ? '' : (newParticipantStreetInput?.value.trim() || ''),
+                    city: noData ? '' : (newParticipantCityInput?.value.trim() || ''),
+                    phone: noData ? '' : (newParticipantPhoneInput?.value.trim() || ''),
+                    paid: newParticipantPaidCheckbox?.checked || false,
+                    canGoHomeAlone: newParticipantCanGoHomeAloneCheckbox?.checked || false,
+                    noData: noData,
+                    pickedUpBy: '',
+                    activityHistory: [{ type: 'Angemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'System' }],
+                    comments: []
+                };
+                participants.push(newP);
+                saveParticipants();
+                showAdminMessage(addParticipantManualMessage, `${first} ${last} hinzugefügt und angemeldet`, false);
+                document.getElementById('child1-first-name').value = '';
+                document.getElementById('child1-last-name').value = '';
+                renderParticipantList();
+            });
+
+            controlModeToggle?.addEventListener('change', () => {
+                controlModeActive = controlModeToggle.checked;
+                saveControlMode();
+                renderParticipantList();
+            });
+
+            createBackupButton?.addEventListener('click', () => createBackup(true));
+            loadBackupButton?.addEventListener('click', () => loadBackupInput?.click());
+            loadBackupInput?.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        localStorage.setItem(LOCAL_STORAGE_PARTICIPANTS_KEY, JSON.stringify(data));
+                        loadParticipants();
+                        renderParticipantList();
+                        showMessage("Sicherung geladen", false);
+                    } catch(err) { showMessage("Fehler beim Laden", true); }
+                };
+                reader.readAsText(file);
+            });
+
+            removeAllParticipantsButton?.addEventListener('click', () => {
+                showConfirmationModal('Alle löschen', 'Wirklich alle Teilnehmer löschen?', () => {
+                    participants = [];
+                    saveParticipants();
+                    showMessage("Alle gelöscht", false);
+                });
+            });
+
+            removeDailyParticipantsButton?.addEventListener('click', () => {
+                showConfirmationModal('Tagesanmeldungen löschen', 'Alle Tagesanmeldungen entfernen?', () => {
+                    participants = participants.filter(p => p.registrationType !== 'Tagesanmeldung');
+                    saveParticipants();
+                    showMessage("Tagesanmeldungen gelöscht", false);
+                });
+            });
+
+            resetAllParticipantsButton?.addEventListener('click', () => {
+                showConfirmationModal('Zurücksetzen', 'Status und Aktivitäten zurücksetzen?', () => {
+                    participants.forEach(p => {
+                        p.status = 'available';
+                        p.pickedUpBy = '';
+                        p.activityHistory = [];
+                        p.comments = [];
+                    });
+                    saveParticipants();
+                    showMessage("Zurückgesetzt", false);
+                });
+            });
+
+            firstNameFilter?.addEventListener('change', renderParticipantList);
+            lastNameFilter?.addEventListener('change', renderParticipantList);
+            participantSearchInput?.addEventListener('input', renderParticipantList);
+            resetFiltersButton?.addEventListener('click', () => {
+                if (firstNameFilter) firstNameFilter.value = '';
+                if (lastNameFilter) lastNameFilter.value = '';
+                if (participantSearchInput) participantSearchInput.value = '';
+                renderParticipantList();
+            });
+
+            const instrLink = document.getElementById('instructions-link');
+            const instrScreen = document.getElementById('instructions-screen');
+            const closeInstr = document.getElementById('close-instructions');
+            instrLink?.addEventListener('click', (e) => {
+                e.preventDefault();
+                mainContentScreen.classList.add('hidden');
+                instrScreen.classList.remove('hidden');
+            });
+            closeInstr?.addEventListener('click', () => {
+                instrScreen.classList.add('hidden');
+                mainContentScreen.classList.remove('hidden');
+            });
+
+            ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(ev => document.addEventListener(ev, resetInactivityTimer, true));
+
+            // Init
+            loadUsers();
+            loadParticipants();
+            loadControlMode();
+            updateCodeDisplay();
+            renderUserList();
+            resetInactivityTimer();
+        </script>
     </div>
-
-    <!-- Zähler für angemeldete Kinder -->
-    <div class="counter-display">
-      Angemeldete Kinder: <span id="checkedInCounter">0</span> / <span id="totalParticipants">0</span>
-    </div>
-
-	<!-- Suchfunktion -->
-	<div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1rem;">
-	  <input type="text" id="searchLastName" class="search-box" placeholder="Nach Nachname suchen..." oninput="searchParticipants()" />
-	  <input type="text" id="searchFirstName" class="search-box" placeholder="Nach Vorname suchen..." oninput="searchParticipants()" />
-	</div>
-
-    <table>
-	<thead>
-	  <tr>
-	    <th class="comment-column">Info</th>
-	    <th>Nachname</th>
-	    <th>Vorname</th>
-	    <th>Aktueller Status</th>
-	    <th>Aktion</th>
-	    <th>Alleine gehen</th>
-	    <th>Bezahlt</th>
-	    <th>Details</th>
-	  </tr>
-	</thead>
-
-      <tbody id="participantTable"></tbody>
-    </table>
-  </div>
-
-  <!-- Passwort ändern Modal -->
-  <div id="passwordModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeChangePasswordModal()">&times;</span>
-      <h3>Passwort ändern</h3>
-      <div>
-        <label>Altes Passwort: <input type="password" id="oldPassword" /></label>
-      </div>
-      <div>
-        <label>Neues Passwort: <input type="password" id="newPassword" /></label>
-      </div>
-      <div>
-        <label>Neues Passwort bestätigen: <input type="password" id="confirmPassword" /></label>
-      </div>
-      <button onclick="changePassword()">Passwort ändern</button>
-      <p id="passwordError" style="color: red;"></p>
-    </div>
-  </div>
-
-  <!-- Betreuer verwalten Modal -->
-  <div id="staffModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeStaffModal()">&times;</span>
-      <h3>Betreuer verwalten</h3>
-      <div class="staff-list">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Aktion</th>
-            </tr>
-          </thead>
-          <tbody id="staffTable"></tbody>
-        </table>
-      </div>
-      <div>
-        <h4>Neuen Betreuer hinzufügen</h4>
-        <label>Name: <input id="newStaffName" /></label>
-        <label>Passwort: <input type="password" id="newStaffPass" /></label>
-        <button onclick="addStaff()">Hinzufügen</button>
-      </div>
-    </div>
-  </div>
-
-<!-- Kommentar-Only Modal -->
-<div id="commentModal" class="modal">
-  <div class="modal-content" style="max-width: 600px;">
-    <span class="close" onclick="closeCommentModal()">&times;</span>
-    <h3 id="commentTitle">Kommentar</h3>
-    <div class="info-details">
-      <div id="commentContent" style="padding: 1rem; background: #f8f9fa; border-radius: 5px;"></div>
-    </div>
-  </div>
-</div>
-
-  <!-- Teilnehmer-Details Modal -->
-  <div id="participantInfoModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeParticipantInfoModal()">&times;</span>
-      <h3 id="participantInfoTitle">Teilnehmerdetails</h3>
-      <div class="info-details">
-        <table>
-          <tbody id="participantInfoTable"></tbody>
-        </table>
-<div id="editFields" style="margin-top: 1rem; display: none;">
-  <h4>Details bearbeiten</h4>
-  <!-- Nur für Admin sichtbar -->
-  <div id="adminOnlyFields">
-    <label>Straße: <input type="text" id="editStreet" class="edit-field"></label>
-    <label>Ort: <input type="text" id="editCity" class="edit-field"></label>
-    <label>Telefon: <input type="text" id="editPhone" class="edit-field"></label>
-    <label>E-Mail: <input type="text" id="editEmail" class="edit-field"></label>
-    <label>Darf alleine nach Hause: <input type="text" id="editAllowAlone" class="edit-field"></label>
-    <label>Bezahlt: <input type="text" id="editPaid" class="edit-field"></label>
-  </div>
-  <!-- Für alle sichtbar -->
-  <label>Kommentare: <textarea id="editComments" class="edit-field" rows="3"></textarea></label>
-  <button onclick="saveParticipantDetails()" class="edit-button">Speichern</button>
-</div>
-        <button id="editDetailsButton" onclick="toggleEditMode()" style="margin-top: 1rem;">Details bearbeiten</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    let currentUser = null;
-    let participantDetails = {};
-    let currentEditingParticipant = null;
-	let pendingCheckoutKey = null;
-    
-    let staffList = JSON.parse(localStorage.getItem('staffList')) || [
-      { name: "DittmarJ", pass: "1234" },
-      { name: "JeanetteS", pass: "1111" }
-    ];
-    let participantList = JSON.parse(localStorage.getItem('participantList')) || [];
-    let checkinHistory = JSON.parse(localStorage.getItem('checkinHistory')) || {};
-
-    function saveData() {
-      localStorage.setItem('participantList', JSON.stringify(participantList));
-      localStorage.setItem('staffList', JSON.stringify(staffList));
-      localStorage.setItem('checkinHistory', JSON.stringify(checkinHistory));
-      localStorage.setItem('participantDetails', JSON.stringify(participantDetails));
-    }
-
-    function loadData() {
-      participantDetails = JSON.parse(localStorage.getItem('participantDetails')) || {};
-    }
-
-    function sortParticipantsAlphabetically() {
-      participantList.sort((a, b) => {
-        const nameA = `${a.lastname} ${a.firstname}`.toLowerCase();
-        const nameB = `${b.lastname} ${b.firstname}`.toLowerCase();
-        return nameA.localeCompare(nameB);
-      });
-    }
-
-    function updateCounter() {
-      const total = participantList.length;
-      let checkedIn = 0;
-      
-      participantList.forEach(p => {
-        const key = `${p.firstname} ${p.lastname}`;
-        const history = checkinHistory[key] || [];
-        if (history.length > 0 && history[history.length - 1].status === 'in') {
-          checkedIn++;
-        }
-      });
-      
-      document.getElementById('checkedInCounter').textContent = checkedIn;
-      document.getElementById('totalParticipants').textContent = total;
-    }
-
-	function searchParticipants() {
-	  const lastNameTerm = document.getElementById('searchLastName').value.toLowerCase();
-	  const firstNameTerm = document.getElementById('searchFirstName').value.toLowerCase();
-	  const rows = document.querySelectorAll('#participantTable tr');
-	  
-	  rows.forEach(row => {
-	    const lastNameCell = row.querySelector('td:nth-child(2)'); // Nachname ist jetzt Spalte 2
-	    const firstNameCell = row.querySelector('td:nth-child(3)'); // Vorname ist jetzt Spalte 3
-	    
-	    if (lastNameCell && firstNameCell) {
-	      const lastName = lastNameCell.textContent.toLowerCase();
-	      const firstName = firstNameCell.textContent.toLowerCase();
-	      
-	      const lastNameMatch = lastNameTerm === '' || lastName.includes(lastNameTerm);
-	      const firstNameMatch = firstNameTerm === '' || firstName.includes(firstNameTerm);
-	      
-	      row.style.display = (lastNameMatch && firstNameMatch) ? '' : 'none';
-	    }
-	  });
-	}
-
-    function showStaffManagement() {
-      const tbody = document.getElementById('staffTable');
-      tbody.innerHTML = '';
-      
-      const sortedStaff = [...staffList].sort((a, b) => a.name.localeCompare(b.name));
-      
-      sortedStaff.forEach(staff => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${staff.name}</td>
-          <td>
-            <button onclick="removeStaff('${staff.name}')">Löschen</button>
-          </td>`;
-        tbody.appendChild(tr);
-      });
-      
-      document.getElementById('staffModal').style.display = 'block';
-      document.getElementById('newStaffName').value = '';
-      document.getElementById('newStaffPass').value = '';
-    }
-
-    function closeStaffModal() {
-      document.getElementById('staffModal').style.display = 'none';
-    }
-
-    function removeStaff(name) {
-      if (currentUser !== "DittmarJ") return;
-      if (name === "DittmarJ") {
-        alert("Der Hauptadmin kann nicht gelöscht werden!");
-        return;
-      }
-      
-      if (confirm(`Soll der Betreuer ${name} wirklich gelöscht werden?`)) {
-        staffList = staffList.filter(staff => staff.name !== name);
-        saveData();
-        showStaffManagement();
-      }
-    }
-
-    function showParticipantInfo(firstname, lastname) {
-      const key = `${firstname} ${lastname}`;
-      const details = participantDetails[key] || {};
-      const history = checkinHistory[key] || [];
-      currentEditingParticipant = key;
-      
-      document.getElementById('participantInfoTitle').textContent = `Details: ${firstname} ${lastname}`;
-      const tbody = document.getElementById('participantInfoTable');
-      tbody.innerHTML = '';
-      
-      // Basisinformationen
-      addInfoRow(tbody, 'Straße', details.address || 'Nicht verfügbar');
-      addInfoRow(tbody, 'Ort', details.city || 'Nicht verfügbar');
-      addInfoRow(tbody, 'Telefon', details.phone || 'Nicht verfügbar');
-      addInfoRow(tbody, 'E-Mail', details.email || 'Nicht verfügbar');
-      addInfoRow(tbody, 'Darf alleine nach Hause', details.allowAlone || 'Nicht verfügbar');
-      addInfoRow(tbody, 'Bezahlt', details.paid || 'Nicht verfügbar');
-	addInfoRow(tbody, 'Kommentare', details.comments || 'Keine Kommentare');
-	addInfoRow(tbody, 'Abgeholt von', details.pickupBy || 'Nicht angegeben');
-     
-      // Verlauf
-      if (history.length > 0) {
-        addInfoRow(tbody, 'Verlauf', '');
-        history.forEach(action => {
-          const actionText = action.status === 'in' 
-            ? `✅ Angemeldet durch ${action.by} um ${action.time}`
-            : action.status === 'out' 
-            ? `🚪 Abgemeldet durch ${action.by} um ${action.time}`
-            : `↩️ Zurückgesetzt durch ${action.by} um ${action.time}`;
-          addInfoRow(tbody, '', actionText);
-        });
-      } else {
-        addInfoRow(tbody, 'Verlauf', 'Keine Aktionen');
-      }
-      
-      // Bearbeitungsfelder vorbereiten
-      document.getElementById('editStreet').value = details.address || '';
-      document.getElementById('editCity').value = details.city || '';
-      document.getElementById('editPhone').value = details.phone || '';
-      document.getElementById('editEmail').value = details.email || '';
-		document.getElementById('editAllowAlone').value = details.allowAlone || '';
-		document.getElementById('editPaid').value = details.paid || '';
-		document.getElementById('editComments').value = details.comments || '';
-      
-		document.getElementById('editFields').style.display = 'none';
-document.getElementById('editDetailsButton').style.display = 'block'; // Immer sichtbar
-// Zeige Admin-Felder nur für DittmarJ
-document.getElementById('adminOnlyFields').style.display = 
-  (currentUser === "DittmarJ") ? 'block' : 'none'; 
-		document.getElementById('editDetailsButton').textContent = 'Details bearbeiten';
-      
-      document.getElementById('participantInfoModal').style.display = 'block';
-    }
-
-    function addInfoRow(tbody, label, value) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><strong>${label}</strong></td>
-        <td>${value}</td>`;
-      tbody.appendChild(tr);
-    }
-
-    function closeParticipantInfoModal() {
-      document.getElementById('participantInfoModal').style.display = 'none';
-    }
-
-    function toggleEditMode() {
-      const editFields = document.getElementById('editFields');
-      if (editFields.style.display === 'none') {
-        editFields.style.display = 'block';
-        document.getElementById('editDetailsButton').textContent = 'Bearbeitung abbrechen';
-      } else {
-        editFields.style.display = 'none';
-        document.getElementById('editDetailsButton').textContent = 'Details bearbeiten';
-      }
-    }
-
-function saveParticipantDetails() {
-  const key = currentEditingParticipant;
-  if (!participantDetails[key]) participantDetails[key] = {};
-
-  // Nur Admins dürfen Nicht-Kommentar-Felder speichern
-  if (currentUser === "DittmarJ") {
-    participantDetails[key].address = document.getElementById('editStreet').value;
-    participantDetails[key].city = document.getElementById('editCity').value;
-    participantDetails[key].phone = document.getElementById('editPhone').value;
-    participantDetails[key].email = document.getElementById('editEmail').value;
-    participantDetails[key].allowAlone = document.getElementById('editAllowAlone').value;
-    participantDetails[key].paid = document.getElementById('editPaid').value;
-  }
-
-  // Kommentar darf jeder speichern
-  participantDetails[key].comments = document.getElementById('editComments').value;
-  saveData();
-  showParticipantInfo(key.split(' ')[0], key.split(' ')[1]); // Modal aktualisieren
-}
-
-    function confirmDataDeletion() {
-      if (currentUser !== "DittmarJ") return;
-      
-      if (confirm('WARNUNG: Dies wird ALLE Daten löschen! Fortfahren?')) {
-        localStorage.clear();
-        staffList = [
-          { name: "DittmarJ", pass: "240309" },
-          { name: "JeanetteS", pass: "1111" }
-        ];
-        participantList = [];
-        checkinHistory = {};
-        participantDetails = {};
-        saveData();
-        renderTable();
-        alert('Alle Daten wurden gelöscht!');
-      }
-    }
-
-    function confirmCheckinDataDeletion() {
-      if (currentUser !== "DittmarJ") return;
-      
-      if (confirm('Sollen alle Anmeldedaten zurückgesetzt werden? (Status wird auf "Nicht da" gesetzt)')) {
-        checkinHistory = {};
-        saveData();
-        renderTable();
-        alert('Anmeldedaten wurden zurückgesetzt!');
-      }
-    }
-
-    function login() {
-      const name = document.getElementById('loginName').value.trim();
-      const pass = document.getElementById('loginPass').value.trim();
-      const match = staffList.find(user => user.name === name && user.pass === pass);
-      
-      if (match) {
-        currentUser = name;
-        document.querySelector('.login').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        document.getElementById('logoutButton').classList.remove('hidden');
-        document.getElementById('welcome').textContent = `Eingeloggt als: ${name}`;
-        
-        if (currentUser === "DittmarJ") {
-          document.getElementById('adminPanel').classList.remove('hidden');
-        } else {
-          document.getElementById('adminPanel').classList.add('hidden');
-        }
-        
-        loadData();
-        renderTable();
-        cleanOldEntries();
-      } else {
-        alert('Falscher Name oder Passwort.');
-      }
-    }
-
-function loginWithPin() {
-  const pin = document.getElementById('pinCodeInput').value.trim();
-  const match = staffList.find(user => user.pass === pin);
-  
-  if (match) {
-    currentUser = match.name;
-    document.querySelector('.login').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    document.getElementById('logoutButton').classList.remove('hidden');
-    document.getElementById('welcome').textContent = `Eingeloggt als: ${currentUser}`;
-    
-    if (currentUser === "DittmarJ") {
-      document.getElementById('adminPanel').classList.remove('hidden');
-    } else {
-      document.getElementById('adminPanel').classList.add('hidden');
-    }
-    
-    loadData();
-    renderTable();
-    cleanOldEntries();
-  } else {
-    alert('Falscher PIN-Code.');
-  }
-}
-
-
-function logout() {
-  currentUser = null;
-  document.querySelector('.login').classList.remove('hidden');
-  document.getElementById('app').classList.add('hidden');
-  document.getElementById('logoutButton').classList.add('hidden');
-  clearPin(); // PIN-Eingabe zurücksetzen
-}
-
-    function showChangePasswordModal() {
-      document.getElementById('passwordModal').style.display = 'block';
-      document.getElementById('oldPassword').value = '';
-      document.getElementById('newPassword').value = '';
-      document.getElementById('confirmPassword').value = '';
-      document.getElementById('passwordError').textContent = '';
-    }
-
-    function closeChangePasswordModal() {
-      document.getElementById('passwordModal').style.display = 'none';
-    }
-
-    function changePassword() {
-      const oldPass = document.getElementById('oldPassword').value;
-      const newPass = document.getElementById('newPassword').value;
-      const confirmPass = document.getElementById('confirmPassword').value;
-      const errorElement = document.getElementById('passwordError');
-      
-      if (!oldPass || !newPass || !confirmPass) {
-        errorElement.textContent = 'Bitte alle Felder ausfüllen!';
-        return;
-      }
-      
-      if (newPass !== confirmPass) {
-        errorElement.textContent = 'Die neuen Passwörter stimmen nicht überein!';
-        return;
-      }
-      
-      if (newPass.length < 4) {
-        errorElement.textContent = 'Das Passwort muss mindestens 4 Zeichen lang sein!';
-        return;
-      }
-      
-      const userIndex = staffList.findIndex(user => user.name === currentUser);
-      if (userIndex === -1) {
-        errorElement.textContent = 'Benutzer nicht gefunden!';
-        return;
-      }
-      
-      if (staffList[userIndex].pass !== oldPass) {
-        errorElement.textContent = 'Das alte Passwort ist falsch!';
-        return;
-      }
-      
-      staffList[userIndex].pass = newPass;
-      saveData();
-      
-      alert('Passwort erfolgreich geändert!');
-      closeChangePasswordModal();
-    }
-
-    function addParticipant() {
-      if (currentUser !== "DittmarJ") return;
-      
-      const lastname = document.getElementById('newParticipantLastname').value.trim();
-      const firstname = document.getElementById('newParticipantFirstname').value.trim();
-      const street = document.getElementById('newParticipantStreet').value.trim();
-      const city = document.getElementById('newParticipantCity').value.trim();
-      const phone = document.getElementById('newParticipantPhone').value.trim();
-      const email = document.getElementById('newParticipantEmail').value.trim();
-      const allowAlone = document.getElementById('newParticipantAlone').value.trim();
-      const paid = document.getElementById('newParticipantPaid').value.trim();
-      
-      if (lastname && firstname) {
-        const key = `${firstname} ${lastname}`;
-        const exists = participantList.some(
-          p => p.firstname.toLowerCase() === firstname.toLowerCase() && 
-               p.lastname.toLowerCase() === lastname.toLowerCase()
-        );
-        
-        if (!exists) {
-          participantList.push({ firstname, lastname });
-          
-          participantDetails[key] = {
-            address: street,
-            city: city,
-            phone: phone,
-            email: email,
-            allowAlone: allowAlone,
-            paid: paid
-          };
-          
-          saveData();
-          
-          // Felder leeren
-          document.getElementById('newParticipantLastname').value = '';
-          document.getElementById('newParticipantFirstname').value = '';
-          document.getElementById('newParticipantStreet').value = '';
-          document.getElementById('newParticipantCity').value = '';
-          document.getElementById('newParticipantPhone').value = '';
-          document.getElementById('newParticipantEmail').value = '';
-          document.getElementById('newParticipantAlone').value = '';
-          document.getElementById('newParticipantPaid').value = '';
-          
-          renderTable();
-          updateCounter();
-          alert(`Teilnehmer ${firstname} ${lastname} wurde hinzugefügt.`);
-        } else {
-          alert('Dieser Teilnehmer existiert bereits!');
-        }
-      } else {
-        alert('Bitte mindestens Vor- und Nachname eingeben.');
-      }
-    }
-
-function renderTable() {
-  sortParticipantsAlphabetically();
-  const tbody = document.getElementById('participantTable');
-  tbody.innerHTML = '';
-  
-  participantList.forEach(p => {
-    const key = `${p.firstname} ${p.lastname}`;
-    const history = checkinHistory[key] || [];
-    const currentStatus = history.length > 0 ? history[history.length - 1].status : '';
-    const details = participantDetails[key] || {};
-    const showCheckIn = currentStatus !== 'in';
-    const showCheckOut = currentStatus === 'in';
-    const showReset = currentUser === "DittmarJ";
-    
-    const tr = document.createElement('tr');
-tr.innerHTML = `
-  <td class="comment-column">
-    ${details.comments ? '<span class="comment-icon" onclick="showCommentOnly(\'' + p.firstname + '\', \'' + p.lastname + '\')">⚠️</span>' : ''}
-  </td>
-  <td>${p.lastname}</td>
-  <td>${p.firstname}</td>
-	  <td class="${currentStatus === 'in' ? 'green' : currentStatus === 'out' ? 'red' : ''}">
-	    ${currentStatus === 'in' ? 'Angemeldet' : currentStatus === 'out' ? 'Abgemeldet' : 'Nicht da'}
-	  </td>
-	  <td>
-	    ${showCheckIn ? `<button onclick="checkIn('${key}')">✅ Anmelden</button>` : ''}
-	    ${showCheckOut ? `<button onclick="checkOut('${key}')">🚪 Abmelden</button>` : ''}
-	    ${showReset ? `<button onclick="resetStatus('${key}')">↩️ Zurücksetzen</button>` : ''}
-	  </td>
-	  <td>${details.allowAlone || ''}</td>
-	  <td>${details.paid || ''}</td>
-	  <td><button class="info-button" onclick="showParticipantInfo('${p.firstname}', '${p.lastname}')">ℹ️ Info</button></td>
-	`;
-    tbody.appendChild(tr);
-  });
-  
-  updateCounter();
-}
-
-    function addAction(key, status) {
-      const now = new Date();
-      const action = {
-        status,
-        time: now.toLocaleTimeString(),
-        by: currentUser,
-        date: now.toISOString(),
-        actionTime: now.getTime()
-      };
-      
-      if (!checkinHistory[key]) {
-        checkinHistory[key] = [];
-      }
-      checkinHistory[key].push(action);
-      saveData();
-      renderTable();
-    }
-
-    function checkIn(key) {
-      addAction(key, 'in');
-    }
-
-	function checkOut(key) {
-	  const details = participantDetails[key] || {};
-	  if (details.allowAlone && details.allowAlone.toLowerCase() === 'nein') {
-	    openPickupModal(key); // Modal öffnen, wenn "Nein" in "Alleine gehen"
-	  } else {
-	    addAction(key, 'out'); // Direkt abmelden, wenn "Ja" oder kein Eintrag
-	  }
-	}
-
-    function resetStatus(key) {
-      if (currentUser === "DittmarJ") {
-        checkinHistory[key] = [];
-        saveData();
-        renderTable();
-      }
-    }
-
-    function addStaff() {
-      if (currentUser !== "DittmarJ") return;
-      
-      const name = document.getElementById('newStaffName').value.trim();
-      const pass = document.getElementById('newStaffPass').value.trim();
-      
-      if (name && pass) {
-        const exists = staffList.some(staff => staff.name.toLowerCase() === name.toLowerCase());
-        
-        if (!exists) {
-          staffList.push({ name, pass });
-          saveData();
-          document.getElementById('newStaffName').value = '';
-          document.getElementById('newStaffPass').value = '';
-          showStaffManagement();
-          alert(`Betreuer ${name} wurde hinzugefügt.`);
-        } else {
-          alert('Dieser Betreuer existiert bereits!');
-        }
-      } else {
-        alert('Bitte Name und Passwort eingeben.');
-      }
-    }
-
-    function exportTodayToExcel() {
-      if (currentUser !== "DittmarJ") return;
-      
-      const wb = XLSX.utils.book_new();
-      const data = [
-        ['Nachname', 'Vorname', 'Status', 'Zeit', 'Betreuer', 'Darf alleine nach Hause', 'Bezahlt', 'Straße', 'Ort', 'Telefon', 'E-Mail']
-      ];
-      
-      const today = new Date().toDateString();
-      for (const [name, history] of Object.entries(checkinHistory)) {
-        history.forEach(action => {
-          if (new Date(action.date).toDateString() === today) {
-            const [firstname, lastname] = name.split(' ');
-            const details = participantDetails[name] || {};
-            data.push([
-              lastname,
-              firstname,
-              getActionText(action),
-              action.time,
-              action.by,
-              details.allowAlone || '',
-              details.paid || '',
-              details.address || '',
-              details.city || '',
-              details.phone || '',
-              details.email || ''
-            ]);
-          }
-        });
-      }
-      
-      data.sort((a, b) => {
-        if (a[0] === 'Nachname') return -1;
-        if (b[0] === 'Nachname') return 1;
-        return new Date(b[3]) - new Date(a[3]);
-      });
-      
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, 'Heutiger Verlauf');
-      XLSX.writeFile(wb, `Checkin-Heute_${new Date().toLocaleDateString()}.xlsx`);
-    }
-
-    function exportFullHistoryToExcel() {
-      if (currentUser !== "DittmarJ") return;
-      
-      const wb = XLSX.utils.book_new();
-      const data = [
-        ['Nachname', 'Vorname', 'Aktion', 'Datum', 'Zeit', 'Betreuer', 'Darf alleine nach Hause', 'Bezahlt', 'Straße', 'Ort', 'Telefon', 'E-Mail']
-      ];
-      
-      for (const [name, history] of Object.entries(checkinHistory)) {
-        const [firstname, lastname] = name.split(' ');
-        const details = participantDetails[name] || {};
-        
-        history.forEach(action => {
-          const actionDate = new Date(action.date);
-          data.push([
-            lastname,
-            firstname,
-            getActionText(action),
-            actionDate.toLocaleDateString(),
-            action.time,
-            action.by,
-            details.allowAlone || '',
-            details.paid || '',
-            details.address || '',
-            details.city || '',
-            details.phone || '',
-            details.email || ''
-          ]);
-        });
-      }
-      
-      data.sort((a, b) => {
-        if (a[0] === 'Nachname') return -1;
-        if (b[0] === 'Nachname') return 1;
-        return new Date(b[3] + ' ' + b[4]) - new Date(a[3] + ' ' + a[4]);
-      });
-      
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, 'Kompletter Verlauf');
-      XLSX.writeFile(wb, `Checkin-Vollstaendig_${new Date().toLocaleDateString()}.xlsx`);
-    }
-
-    function getActionText(action) {
-      return action.status === 'in' 
-        ? 'Angemeldet'
-        : action.status === 'out' 
-        ? 'Abgemeldet'
-        : 'Zurückgesetzt';
-    }
-
-    function cleanOldEntries() {
-      const now = Date.now();
-      const twoWeeksAgo = now - 14 * 24 * 60 * 60 * 1000;
-      
-      for (const key in checkinHistory) {
-        checkinHistory[key] = checkinHistory[key].filter(
-          action => new Date(action.date).getTime() > twoWeeksAgo
-        );
-        
-        if (checkinHistory[key].length === 0) {
-          delete checkinHistory[key];
-        }
-      }
-      saveData();
-    }
-
-    // Teilnehmerliste hochladen (nur für DittmarJ)
-    document.getElementById('uploadParticipants').addEventListener('change', function(evt) {
-      if (currentUser !== "DittmarJ") return;
-      
-      const file = evt.target.files[0];
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const workbook = XLSX.read(e.target.result, { type: 'binary' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(sheet);
-        
-        participantList = [];
-        participantDetails = {};
-        
-		data.forEach(row => {
-		  const lastname = row.Name || row.Nachname || row.lastname || '';
-		  const firstname = row.Vorname || row.firstname || '';
-		  const key = `${firstname} ${lastname}`;
-		  
-		  if (firstname && lastname) {
-		    participantList.push({ firstname, lastname });
-		    
-		    participantDetails[key] = {
-		      address: row['Straße '] || row.Straße || row.address || '',
-		      city: row.Ort || row.city || '',
-		      phone: row['Tel.'] || row.Telefon || row.phone || '',
-		      email: row['E-Mail'] || row.Email || row.email || '',
-		      allowAlone: row['Darf alleine nach Hause'] || row.allowAlone || '',
-		      paid: row.Bezahlt || row.bezahlt || row.paid || ''
-		    };
-		  }
-		});
-        
-        sortParticipantsAlphabetically();
-        saveData();
-        renderTable();
-        alert(`Es wurden ${participantList.length} Teilnehmer geladen.`);
-      };
-      reader.readAsBinaryString(file);
-    });
-
-    // Initialen Zählerstand anzeigen
-    if (participantList.length > 0) {
-      loadData();
-      updateCounter();
-    }
-
-function appendPin(digit) {
-  const input = document.getElementById('pinCodeInput');
-  if (input.value.length < 6) {
-    input.value += digit;
-  }
-}
-
-function clearPin() {
-  document.getElementById('pinCodeInput').value = '';
-}
-
-function showCommentOnly(firstname, lastname) {
-  const key = `${firstname} ${lastname}`;
-  const details = participantDetails[key] || {};
-  const comment = details.comments || 'Kein Kommentar hinterlegt.';
-
-  document.getElementById('commentTitle').textContent = `Kommentar zu ${firstname} ${lastname}`;
-  document.getElementById('commentContent').textContent = comment;
-  document.getElementById('commentModal').style.display = 'block';
-}
-
-function closeCommentModal() {
-  document.getElementById('commentModal').style.display = 'none';
-}
-
-function openPickupModal(key) {
-  pendingCheckoutKey = key;
-  document.getElementById('pickupModal').style.display = 'block';
-}
-
-function closePickupModal() {
-  pendingCheckoutKey = null;
-  document.getElementById('pickupModal').style.display = 'none';
-  document.getElementById('pickupForm').reset();
-  document.getElementById('otherPickupText').value = '';
-}
-
-document.getElementById('pickupForm').addEventListener('submit', function (e) {
-  e.preventDefault();
-  if (!pendingCheckoutKey) return;
-
-  const selected = document.querySelector('input[name="pickup"]:checked');
-  let pickupValue = selected ? selected.value : '';
-  if (pickupValue === 'Sonstige') {
-    const otherText = document.getElementById('otherPickupText').value.trim();
-    if (otherText) pickupValue += `: ${otherText}`;
-  }
-
-  if (!participantDetails[pendingCheckoutKey]) participantDetails[pendingCheckoutKey] = {};
-  participantDetails[pendingCheckoutKey].pickupBy = pickupValue;
-
-  saveData();
-  addAction(pendingCheckoutKey, 'out');
-  closePickupModal();
-});
-
-function submitPickupForm() {
-  if (!pendingCheckoutKey) return;
-
-  const selected = document.querySelector('input[name="pickup"]:checked');
-  let pickupValue = selected ? selected.value : '';
-  if (pickupValue === 'Sonstige') {
-    const otherText = document.getElementById('otherPickupText').value.trim();
-    if (otherText) pickupValue += `: ${otherText}`;
-  }
-
-  if (!participantDetails[pendingCheckoutKey]) participantDetails[pendingCheckoutKey] = {};
-  participantDetails[pendingCheckoutKey].pickupBy = pickupValue;
-
-  saveData();
-  addAction(pendingCheckoutKey, 'out');
-  closePickupModal();
-}
-
-  </script>
-
-<!-- Abholer-Auswahl Modal -->
-<div id="pickupModal" class="modal">
-  <div class="modal-content" style="max-width: 500px;">
-    <span class="close" onclick="closePickupModal()">&times;</span>
-    <h3>Wer hat das Kind abgeholt?</h3>
-    <form id="pickupForm">
-      <label><input type="radio" name="pickup" value="Mutter" required> Mutter</label><br>
-      <label><input type="radio" name="pickup" value="Vater"> Vater</label><br>
-      <label><input type="radio" name="pickup" value="Oma"> Oma</label><br>
-      <label><input type="radio" name="pickup" value="Opa"> Opa</label><br>
-      <label><input type="radio" name="pickup" value="Sonstige"> Sonstige:</label>
-      <input type="text" id="otherPickupText" placeholder="z. B. Tante Lisa"><br><br>
-		<button type="button" onclick="submitPickupForm()">Bestätigen</button>
-    </form>
-  </div>
-</div>
-
 </body>
 </html>
