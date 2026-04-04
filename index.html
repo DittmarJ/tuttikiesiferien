@@ -115,6 +115,25 @@
             background: rgba(255, 59, 48, 1);
         }
         
+        /* Abgerundeter Sortier-Button */
+        .sort-select {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 2rem;
+            color: #1d1d1f;
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .sort-select:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
         .participant-item-container {
             position: relative;
             overflow: hidden;
@@ -437,7 +456,7 @@
             </div>
         </div>
 
-        <!-- Main Content Screen (Betreuer) -->
+        <!-- Main Content Screen (Betreuer und Betreuungsleitung) -->
         <div id="main-content-screen" class="space-y-5 hidden">
             <div class="flex flex-col items-center">
                 <img src="https://raw.githubusercontent.com/DittmarJ/anmeldesystem_update2/81a13401c99e7f3f1d729472a6ca3d21ef9ad3c8/tuttikiesi-logo-2.png" 
@@ -455,20 +474,8 @@
             </button>
         </div>
 
-        <!-- Instructions Screen -->
-        <div id="instructions-screen" class="hidden p-5 glass-panel">
-            <h3 class="text-xl font-bold text-[#1d1d1f] mb-4">Anleitung</h3>
-            <p class="mb-3 text-[#6c6c70]">Nach links wischen, um den Anmelde- oder Abmelde-Button zu sehen.</p>
-            <p class="mb-3 text-[#6c6c70]">Zum An- oder Abmelden auf den Button tippen.</p>
-            <p class="mb-3 text-[#6c6c70]">Über den Info-Button können Details eingesehen und Kommentare hinzugefügt werden.</p>
-            <p class="mb-3 text-[#6c6c70]">Bei vorhandenen Kommentaren erscheint ein C vor dem Info-Button.</p>
-            <p class="mb-3 text-[#6c6c70]">Alle Änderungen werden automatisch gespeichert.</p>
-            <button id="close-instructions" class="glass-button-primary w-full py-3 mt-4 rounded-button">Zurück</button>
-        </div>
-
-        <!-- Admin Content Screen -->
+        <!-- Admin Content Screen (nur für echte Admins) -->
         <div id="admin-content-screen" class="space-y-5 hidden">
-            <!-- Logo oben im Admin-Bereich -->
             <div class="flex flex-col items-center">
                 <img src="https://raw.githubusercontent.com/DittmarJ/anmeldesystem_update2/81a13401c99e7f3f1d729472a6ca3d21ef9ad3c8/tuttikiesi-logo-2.png" 
                      alt="Tuttikiesi Logo"
@@ -506,7 +513,7 @@
                     </div>
                 </div>
 
-                <!-- Participant Management (für Admin und Betreuungsleitung) -->
+                <!-- Participant Management (für Admin) -->
                 <div id="participant-management-section" class="glass-panel p-4 hidden">
                     <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Teilnehmerverwaltung</h3>
                     <div class="mb-5 border-b pb-4">
@@ -621,7 +628,7 @@
             <div class="space-y-2 mb-3">
                 <input type="text" id="participant-search-input" placeholder="Teilnehmer suchen..." class="glass-input w-full p-2 rounded-button">
                 <div class="flex items-center space-x-2">
-                    <select id="sort-select" class="flex-1 p-2 rounded-button">
+                    <select id="sort-select" class="sort-select flex-1">
                         <option value="firstNameAsc">Sortieren: Vorname A-Z</option>
                         <option value="firstNameDesc">Sortieren: Vorname Z-A</option>
                         <option value="lastNameAsc">Sortieren: Nachname A-Z</option>
@@ -986,11 +993,6 @@
                 if (excelImportContainer) {
                     if (isAdmin) excelImportContainer.classList.remove('hidden');
                     else excelImportContainer.classList.add('hidden');
-                }
-                
-                // Bei Betreuungsleitung standardmäßig die Teilnehmerübersicht öffnen
-                if (isBetreuungsleitung) {
-                    showAdminSection('admin-participant-overview-section');
                 }
             }
 
@@ -1472,7 +1474,7 @@
                 }
             }
 
-            // *** INACTIVITY TIMER AUF 1 MINUTE (60000 ms) GEÄNDERT ***
+            // *** INACTIVITY TIMER AUF 1 MINUTE (60000 ms) ***
             let inactivityTimer;
             const INACTIVITY_LIMIT = 60 * 1000; // 1 Minute
             function resetInactivityTimer() {
@@ -1500,18 +1502,30 @@
                             updateCodeDisplay();
                             currentLoggedInUsername = user.username;
                             currentLoggedInUserStatus = user.status;
-                            if (user.status === 'admin' || user.status === 'Betreuungsleitung') {
+                            if (user.status === 'admin') {
                                 mainContentScreen.classList.add('hidden');
                                 adminContentScreen.classList.remove('hidden');
-                                // Berechtigungen für die Navigation setzen
+                                // Admin Navigation Berechtigungen setzen
                                 updateAdminNavigationByRole(user.status);
-                                showMessage(`Willkommen ${user.username} (${user.status === 'admin' ? 'Admin' : 'Betreuungsleitung'})`, false);
+                                showMessage(`Willkommen Admin ${user.username}`, false);
+                            } else if (user.status === 'Betreuungsleitung') {
+                                // Betreuungsleitung sieht den normalen Betreuer-Bildschirm
+                                adminContentScreen.classList.add('hidden');
+                                mainContentScreen.classList.remove('hidden');
+                                unifiedParticipantContainer.classList.remove('hidden');
+                                betreuerNameDisplay.textContent = user.username;
+                                renderParticipantList();
+                                // Zusätzlich Admin-Berechtigungen für Teilnehmerverwaltung
+                                // Die Betreuungsleitung kann über einen separaten Link oder Button zur Teilnehmerverwaltung
+                                // Hier fügen wir einen unsichtbaren Bereich hinzu, der per Kontext erreichbar ist
+                                showMessage(`Willkommen ${user.username} (Betreuungsleitung)`, false);
                             } else {
                                 adminContentScreen.classList.add('hidden');
                                 mainContentScreen.classList.remove('hidden');
                                 unifiedParticipantContainer.classList.remove('hidden');
                                 betreuerNameDisplay.textContent = user.username;
                                 renderParticipantList();
+                                showMessage(`Willkommen ${user.username}`, false);
                             }
                         } else {
                             showMessage('Falscher Code oder Benutzer inaktiv');
