@@ -16,7 +16,7 @@
         }
         
         body {
-            background-image: url('https://raw.githubusercontent.com/DittmarJ/tuttikiesiferien/main/slider-3.jpg');
+            background-image: url('https://raw.githubusercontent.com/DittmarJ/tuttikiesiferien/main/Bildschirmfoto%202026-04-04%20um%2022.14.13.png');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -267,11 +267,9 @@
             box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
         }
         
-        /* Für Betreuungsleitung - ausgegraute Buttons */
-        .admin-nav-button.disabled-nav {
-            opacity: 0.5;
-            cursor: not-allowed;
-            pointer-events: none;
+        /* Für Betreuungsleitung - Buttons komplett ausblenden */
+        .admin-nav-button.hidden-nav {
+            display: none !important;
         }
         
         #action-feedback-message {
@@ -470,9 +468,15 @@
 
         <!-- Admin Content Screen -->
         <div id="admin-content-screen" class="space-y-5 hidden">
+            <!-- Logo oben im Admin-Bereich -->
+            <div class="flex flex-col items-center">
+                <img src="https://raw.githubusercontent.com/DittmarJ/anmeldesystem_update2/81a13401c99e7f3f1d729472a6ca3d21ef9ad3c8/tuttikiesi-logo-2.png" 
+                     alt="Tuttikiesi Logo"
+                     class="h-16 object-contain">
+            </div>
             <h2 class="text-2xl font-bold text-center text-[#1d1d1f]">Admin-Bereich</h2>
             <p class="text-center text-[#6c6c70] mb-8">Willkommen im Admin-Bereich. Hier können Sie Einstellungen vornehmen.</p>
-            <div class="flex flex-col space-y-2">
+            <div class="flex flex-col space-y-2" id="admin-nav-container">
                 <button id="nav-user-management" class="admin-nav-button rounded-button">Benutzerverwaltung</button>
                 <button id="nav-participant-management" class="admin-nav-button rounded-button">Teilnehmerverwaltung</button>
                 <button id="nav-participant-overview" class="admin-nav-button rounded-button">Teilnehmerübersicht</button>
@@ -502,7 +506,7 @@
                     </div>
                 </div>
 
-                <!-- Participant Management -->
+                <!-- Participant Management (nur für Admin und Betreuungsleitung) -->
                 <div id="participant-management-section" class="glass-panel p-4 hidden">
                     <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Teilnehmerverwaltung</h3>
                     <div class="mb-5 border-b pb-4">
@@ -573,7 +577,8 @@
                         <div id="add-participant-manual-message" class="mt-2 text-sm text-center hidden"></div>
                     </div>
 
-                    <div>
+                    <!-- Excel-Import NUR für Admin sichtbar -->
+                    <div id="excel-import-container">
                         <h4 class="text-md font-medium text-[#1d1d1f] mb-3">Excel-Import</h4>
                         <input type="file" id="import-participants-file-input" accept=".xlsx,.xls" class="glass-input w-full p-2 mb-2 rounded-button">
                         <button id="import-participants-button" class="glass-button w-full py-2 rounded-button">Excel importieren</button>
@@ -838,6 +843,7 @@
             const adminNavButtons = document.querySelectorAll('.admin-nav-button');
             const adminSectionWrapper = document.getElementById('admin-section-wrapper');
             const adminWelcomeMessage = document.getElementById('admin-welcome-message');
+            const excelImportContainer = document.getElementById('excel-import-container');
 
             const newParticipantRegtypeSelect = document.getElementById('new-participant-regtype');
             const newParticipantStreetInput = document.getElementById('new-participant-street');
@@ -955,27 +961,37 @@
 
             // Berechtigungen für Betreuungsleitung
             function updateAdminNavigationByRole(userStatus) {
-                // Alle Buttons erstmal aktivieren (für Admin)
-                const navButtons = [
-                    { button: navUserManagementButton, section: 'user-management-section', allowedFor: ['admin'] },
-                    { button: navParticipantManagementButton, section: 'participant-management-section', allowedFor: ['admin', 'Betreuungsleitung'] },
-                    { button: navParticipantOverviewButton, section: 'admin-participant-overview-section', allowedFor: ['admin', 'Betreuungsleitung'] },
-                    { button: navProgramSettingsButton, section: 'program-settings-section', allowedFor: ['admin'] }
-                ];
+                const isAdmin = userStatus === 'admin';
+                const isBetreuungsleitung = userStatus === 'Betreuungsleitung';
                 
-                navButtons.forEach(item => {
-                    if (item.button) {
-                        if (item.allowedFor.includes(userStatus)) {
-                            item.button.classList.remove('disabled-nav');
-                            item.button.style.pointerEvents = 'auto';
-                            item.button.style.opacity = '1';
-                        } else {
-                            item.button.classList.add('disabled-nav');
-                            item.button.style.pointerEvents = 'none';
-                            item.button.style.opacity = '0.5';
-                        }
-                    }
-                });
+                // Navigation Buttons anzeigen/ausblenden
+                if (navUserManagementButton) {
+                    if (isAdmin) navUserManagementButton.classList.remove('hidden-nav');
+                    else navUserManagementButton.classList.add('hidden-nav');
+                }
+                if (navParticipantManagementButton) {
+                    if (isAdmin || isBetreuungsleitung) navUserManagementButton.classList.remove('hidden-nav');
+                    else navParticipantManagementButton.classList.add('hidden-nav');
+                }
+                if (navParticipantOverviewButton) {
+                    if (isAdmin || isBetreuungsleitung) navParticipantOverviewButton.classList.remove('hidden-nav');
+                    else navParticipantOverviewButton.classList.add('hidden-nav');
+                }
+                if (navProgramSettingsButton) {
+                    if (isAdmin) navProgramSettingsButton.classList.remove('hidden-nav');
+                    else navProgramSettingsButton.classList.add('hidden-nav');
+                }
+                
+                // Excel-Import nur für Admin sichtbar
+                if (excelImportContainer) {
+                    if (isAdmin) excelImportContainer.classList.remove('hidden');
+                    else excelImportContainer.classList.add('hidden');
+                }
+                
+                // Bei Betreuungsleitung standardmäßig die Teilnehmerübersicht öffnen
+                if (isBetreuungsleitung) {
+                    showAdminSection('admin-participant-overview-section');
+                }
             }
 
             // User Functions
@@ -1488,8 +1504,6 @@
                                 adminContentScreen.classList.remove('hidden');
                                 // Berechtigungen für die Navigation setzen
                                 updateAdminNavigationByRole(user.status);
-                                showAdminSection('');
-                                unifiedParticipantContainer.classList.add('hidden');
                                 showMessage(`Willkommen ${user.username} (${user.status === 'admin' ? 'Admin' : 'Betreuungsleitung'})`, false);
                             } else {
                                 adminContentScreen.classList.add('hidden');
