@@ -115,16 +115,6 @@
             background: rgba(255, 59, 48, 1);
         }
         
-        .glass-button-alarm {
-            background: rgba(0, 122, 255, 0.95);
-            border-color: rgba(0, 122, 255, 0.3);
-            color: white;
-        }
-        
-        .glass-button-alarm:hover {
-            background: rgba(0, 122, 255, 1);
-        }
-        
         .sort-select {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(4px);
@@ -460,7 +450,6 @@
             padding: 1.5rem;
         }
         
-        /* Alarm Modal Styles */
         .alarm-stats {
             background: rgba(255, 255, 255, 0.9);
             border-radius: 1rem;
@@ -570,7 +559,7 @@
             </button>
         </div>
 
-        <!-- Instructions Screen (ohne Symbole) -->
+        <!-- Instructions Screen -->
         <div id="instructions-screen" class="hidden glass-panel p-5 max-w-md mx-auto">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold text-[#1d1d1f]">Anleitung</h3>
@@ -594,7 +583,6 @@
                     <button id="close-alarm-modal" class="text-[#8e8e93] hover:text-[#1d1d1f] text-2xl leading-none">&times;</button>
                 </div>
                 
-                <!-- Statistik-Karten -->
                 <div class="alarm-stats">
                     <div class="grid grid-cols-3 gap-3">
                         <div id="stat-signedin" class="stat-card">
@@ -612,20 +600,16 @@
                     </div>
                 </div>
                 
-                <!-- Suchfeld -->
                 <input type="text" id="alarm-search-input" placeholder="Teilnehmer suchen..." class="glass-input w-full p-2 rounded-button alarm-search-input">
                 
-                <!-- Filter-Buttons -->
                 <div class="alarm-filter-buttons">
                     <button data-filter="all" class="alarm-filter-btn active">Alle</button>
                     <button data-filter="present" class="alarm-filter-btn">Anwesend</button>
                     <button data-filter="missing" class="alarm-filter-btn">Fehlen noch</button>
                 </div>
                 
-                <!-- Teilnehmerliste für Alarm -->
                 <div id="alarm-participant-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
                 
-                <!-- Reset-Button nur für Admin sichtbar -->
                 <div id="alarm-reset-container" class="hidden mt-4">
                     <button id="reset-alarm-button" class="glass-button-danger w-full py-2 rounded-button">Alarm zurücksetzen (alle Anwesenheitsmarkierungen entfernen)</button>
                 </div>
@@ -641,9 +625,7 @@
                     <h2 class="text-xl font-bold text-[#1d1d1f]">Teilnehmerverwaltung</h2>
                     <button id="close-admin-overlay" class="text-[#8e8e93] hover:text-[#1d1d1f] text-2xl leading-none">&times;</button>
                 </div>
-                <div id="admin-overlay-content">
-                    <!-- Teilnehmerverwaltung Inhalt wird hier dynamisch geladen -->
-                </div>
+                <div id="admin-overlay-content"></div>
             </div>
         </div>
 
@@ -666,7 +648,6 @@
             <div id="admin-section-wrapper" class="hidden">
                 <p id="admin-welcome-message" class="text-center text-[#6c6c70] mb-4">Bitte wählen Sie eine Option oben.</p>
                 
-                <!-- User Management -->
                 <div id="user-management-section" class="glass-panel p-4 hidden">
                     <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Benutzerverwaltung</h3>
                     <div class="mb-5 border-b pb-4">
@@ -687,7 +668,6 @@
                     </div>
                 </div>
 
-                <!-- Participant Management Template (immer nur 1 Kind) -->
                 <div id="participant-management-section" class="glass-panel p-4 hidden">
                     <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Teilnehmerverwaltung</h3>
                     <div class="mb-5 border-b pb-4">
@@ -711,10 +691,23 @@
 
                         <div class="space-y-3 mb-4">
                             <div class="p-3 rounded-2xl border border-[rgba(0,0,0,0.1)]">
-                                <p class="text-xs font-bold text-[#007aff] mb-2">Kind</p>
+                                <p class="text-xs font-bold text-[#007aff] mb-2">Kind 1</p>
                                 <input type="text" id="child1-first-name" placeholder="Vorname" class="glass-input w-full p-2 mb-2 rounded-button">
                                 <input type="text" id="child1-last-name" placeholder="Nachname" class="glass-input w-full p-2 mb-2 rounded-button">
                             </div>
+                            <div id="child2-container" class="p-3 rounded-2xl border border-[rgba(0,0,0,0.1)] hidden">
+                                <p class="text-xs font-bold text-[#007aff] mb-2">Kind 2</p>
+                                <input type="text" id="child2-first-name" placeholder="Vorname" class="glass-input w-full p-2 mb-2 rounded-button">
+                                <input type="text" id="child2-last-name" placeholder="Nachname" class="glass-input w-full p-2 mb-2 rounded-button">
+                            </div>
+                            <div id="child3-container" class="p-3 rounded-2xl border border-[rgba(0,0,0,0.1)] hidden">
+                                <p class="text-xs font-bold text-[#007aff] mb-2">Kind 3</p>
+                                <input type="text" id="child3-first-name" placeholder="Vorname" class="glass-input w-full p-2 mb-2 rounded-button">
+                                <input type="text" id="child3-last-name" placeholder="Nachname" class="glass-input w-full p-2 mb-2 rounded-button">
+                            </div>
+                            <button type="button" id="add-sibling-row-button" class="text-[#007aff] text-sm font-bold flex items-center hover:text-[#0051d5] transition rounded-button px-3 py-2 bg-white/50">
+                                <span class="mr-1 text-lg">+</span> Geschwisterkind hinzufügen
+                            </button>
                         </div>
 
                         <div class="space-y-2 mb-3 pt-3 border-t">
@@ -742,7 +735,6 @@
                         <div id="add-participant-manual-message" class="mt-2 text-sm text-center hidden"></div>
                     </div>
 
-                    <!-- Excel-Import NUR für Admin sichtbar -->
                     <div id="excel-import-container">
                         <h4 class="text-md font-medium text-[#1d1d1f] mb-3">Excel-Import</h4>
                         <input type="file" id="import-participants-file-input" accept=".xlsx,.xls" class="glass-input w-full p-2 mb-2 rounded-button">
@@ -751,13 +743,11 @@
                     </div>
                 </div>
 
-                <!-- Admin Participant Overview -->
                 <div id="admin-participant-overview-section" class="glass-panel p-4 hidden">
                     <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Teilnehmerübersicht</h3>
                     <p class="text-[#6c6c70] mb-3">Hier sehen Sie alle Teilnehmer und ihren aktuellen Status.</p>
                 </div>
 
-                <!-- Program Settings -->
                 <div id="program-settings-section" class="glass-panel p-4 hidden">
                     <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Programmeinstellungen</h3>
                     <label class="flex items-center space-x-2 mb-4">
@@ -801,7 +791,6 @@
             <p id="no-participants-message-unified" class="text-center text-[#8e8e93] text-sm mt-4 hidden">Noch keine Teilnehmer vorhanden.</p>
         </div>
 
-        <!-- Family Selection Modal -->
         <div id="family-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
             <div class="modal-content p-5 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
                 <h3 id="family-modal-title" class="text-xl font-bold text-[#1d1d1f] mb-3">Familienmitglieder auswählen</h3>
@@ -814,7 +803,6 @@
             </div>
         </div>
 
-        <!-- Pickup for Family Modal -->
         <div id="pickup-family-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
             <div class="modal-content p-5 w-full max-w-md mx-4">
                 <h3 class="text-xl font-bold text-[#1d1d1f] mb-3">Abholperson festlegen</h3>
@@ -827,7 +815,6 @@
             </div>
         </div>
 
-        <!-- Delete Confirmation Modal -->
         <div id="delete-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
             <div class="modal-content p-6 w-full max-w-sm mx-4">
                 <h3 id="delete-modal-title" class="text-xl font-bold text-[#1d1d1f] mb-3">Bestätigung</h3>
@@ -839,7 +826,6 @@
             </div>
         </div>
 
-        <!-- Participant Details Modal -->
         <div id="participant-details-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
             <div class="modal-content p-5 w-full max-w-md mx-4 max-h-[85vh] overflow-y-auto">
                 <h3 id="details-modal-title" class="text-xl font-bold text-[#1d1d1f] mb-4">Teilnehmerdetails</h3>
@@ -880,7 +866,6 @@
             </div>
         </div>
 
-        <!-- Pickup Modal (Einzelperson) -->
         <div id="pickup-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
             <div class="modal-content p-5 w-full max-w-sm mx-4">
                 <h3 class="text-xl font-bold text-[#1d1d1f] mb-3">Teilnehmer abholen</h3>
@@ -923,7 +908,6 @@
             const closeAdminOverlay = document.getElementById('close-admin-overlay');
             const adminOverlayContent = document.getElementById('admin-overlay-content');
             
-            // Alarm Modal Elements
             const alarmModal = document.getElementById('alarm-modal');
             const closeAlarmModal = document.getElementById('close-alarm-modal');
             const closeAlarmModalBottom = document.getElementById('close-alarm-modal-bottom');
@@ -999,7 +983,6 @@
             const confirmPickupButton = document.getElementById('confirm-pickup');
             const pickupMessageBox = document.getElementById('pickup-message-box');
 
-            // Family Modal Elements
             const familyModal = document.getElementById('family-modal');
             const familyModalTitle = document.getElementById('family-modal-title');
             const familyModalMessage = document.getElementById('family-modal-message');
@@ -1007,7 +990,6 @@
             const cancelFamilyModal = document.getElementById('cancel-family-modal');
             const confirmFamilyAction = document.getElementById('confirm-family-action');
             
-            // Pickup Family Modal Elements
             const pickupFamilyModal = document.getElementById('pickup-family-modal');
             const pickupFamilyList = document.getElementById('pickup-family-list');
             const cancelPickupFamily = document.getElementById('cancel-pickup-family');
@@ -1040,6 +1022,9 @@
             const importParticipantsButton = document.getElementById('import-participants-button');
             const importParticipantsMessage = document.getElementById('import-participants-message');
             const noDataCheckbox = document.getElementById('no-data-checkbox');
+            const addSiblingBtn = document.getElementById('add-sibling-row-button');
+            const child2Div = document.getElementById('child2-container');
+            const child3Div = document.getElementById('child3-container');
 
             const controlModeToggle = document.getElementById('control-mode-toggle');
             const createBackupButton = document.getElementById('create-backup-button');
@@ -1065,12 +1050,10 @@
             var currentAlarmFilter = 'all';
             var currentAlarmSearchTerm = '';
             
-            // Family action variables
             var pendingFamilyAction = null;
             var familyMembersListData = [];
             var pendingFamilyPickupMembers = null;
 
-            // Local Storage Keys
             const LOCAL_STORAGE_USERS_KEY = 'ferienprogramm_users';
             const LOCAL_STORAGE_PARTICIPANTS_KEY = 'ferienprogramm_participants';
             const LOCAL_STORAGE_CONTROL_MODE_KEY = 'ferienprogramm_control_mode';
@@ -1080,7 +1063,6 @@
             let users = [];
             let participants = [];
 
-            // Helper Functions
             function showMessage(message, isError = true) {
                 messageBox.textContent = message;
                 messageBox.classList.remove('hidden');
@@ -1110,18 +1092,41 @@
                 codeDisplay.textContent = '*'.repeat(enteredCode.length);
             }
 
-            // Reset search field after action
             function resetSearchAndFilter() {
                 if (participantSearchInput) participantSearchInput.value = '';
                 if (sortSelect) sortSelect.value = 'firstNameAsc';
                 renderParticipantList();
             }
             
-            // Reset alarm search field
             function resetAlarmSearch() {
                 if (alarmSearchInput) alarmSearchInput.value = '';
                 currentAlarmSearchTerm = '';
                 renderAlarmList();
+            }
+            
+            // Reset Teilnehmerverwaltung Formular (nur Kind 1 sichtbar)
+            function resetParticipantManagementForm() {
+                if (child2Div) child2Div.classList.add('hidden');
+                if (child3Div) child3Div.classList.add('hidden');
+                if (addSiblingBtn) addSiblingBtn.classList.remove('hidden');
+                
+                if (document.getElementById('child1-first-name')) document.getElementById('child1-first-name').value = '';
+                if (document.getElementById('child1-last-name')) document.getElementById('child1-last-name').value = '';
+                if (document.getElementById('child2-first-name')) document.getElementById('child2-first-name').value = '';
+                if (document.getElementById('child2-last-name')) document.getElementById('child2-last-name').value = '';
+                if (document.getElementById('child3-first-name')) document.getElementById('child3-first-name').value = '';
+                if (document.getElementById('child3-last-name')) document.getElementById('child3-last-name').value = '';
+                if (newParticipantStreetInput) newParticipantStreetInput.value = '';
+                if (newParticipantCityInput) newParticipantCityInput.value = '';
+                if (newParticipantPhoneInput) newParticipantPhoneInput.value = '';
+                
+                if (noDataCheckbox) noDataCheckbox.checked = false;
+                if (newParticipantCanGoHomeAloneCheckbox) newParticipantCanGoHomeAloneCheckbox.checked = true;
+                if (newParticipantPaidCheckbox) newParticipantPaidCheckbox.checked = true;
+                
+                if (newParticipantStreetInput) newParticipantStreetInput.disabled = false;
+                if (newParticipantCityInput) newParticipantCityInput.disabled = false;
+                if (newParticipantPhoneInput) newParticipantPhoneInput.disabled = false;
             }
 
             function getLastName(fullName) {
@@ -1158,7 +1163,6 @@
                 }
             }
 
-            // Alarm Functions
             function updateAlarmStats() {
                 const signedInParticipants = participants.filter(p => p.status === 'signedIn');
                 const presentParticipants = signedInParticipants.filter(p => p.present === true);
@@ -1175,7 +1179,6 @@
                 const signedInParticipants = participants.filter(p => p.status === 'signedIn');
                 const searchTerm = currentAlarmSearchTerm.toLowerCase();
                 
-                // Sortieren wie in der normalen Liste
                 let filteredParticipants = signedInParticipants.filter(p => p.name.toLowerCase().includes(searchTerm));
                 filteredParticipants = sortParticipants(filteredParticipants);
                 
@@ -1232,7 +1235,6 @@
                     renderAlarmList();
                     renderParticipantList();
                     showActionFeedback(`${participant.name} wurde ${participant.present ? 'als anwesend' : 'als abwesend'} markiert`, true);
-                    // Suchfeld zurücksetzen nach Aktion
                     resetAlarmSearch();
                 }
             }
@@ -1295,7 +1297,6 @@
                 renderAlarmList();
             }
 
-            // User Functions
             function loadUsers() {
                 try {
                     const stored = localStorage.getItem(LOCAL_STORAGE_USERS_KEY);
@@ -1341,7 +1342,6 @@
                 });
             }
 
-            // Participant Functions
             function loadParticipants() {
                 try {
                     const stored = localStorage.getItem(LOCAL_STORAGE_PARTICIPANTS_KEY);
@@ -1391,7 +1391,6 @@
                 localStorage.setItem(LOCAL_STORAGE_CONTROL_MODE_KEY, controlModeActive);
             }
 
-            // Swipe Functions
             function closeAllSwipedItems(exclude = null) {
                 document.querySelectorAll('.participant-item-container.swiped').forEach(item => {
                     const wrapper = item.querySelector('.participant-content-wrapper');
@@ -1449,7 +1448,6 @@
                 if (activeSwipeItem === this) activeSwipeItem = null;
             }
 
-            // Family Modal Functions
             function showFamilyModal(lastName, action, participantsWithSameLastName) {
                 pendingFamilyAction = action;
                 familyModalTitle.textContent = action === 'anmelden' ? 'Familienmitglieder anmelden' : 'Familienmitglieder abmelden';
@@ -1631,7 +1629,6 @@
                 pendingFamilyPickupMembers = null;
             }
 
-            // Funktion zum Hinzufügen eines Kindes (für beide Buttons)
             function addChild(firstName, lastName, regType, noData, street, city, phone, paid, canGoHomeAlone, signIn = false) {
                 const newP = {
                     id: Date.now().toString(),
@@ -1651,35 +1648,6 @@
                 };
                 participants.push(newP);
                 return newP;
-            }
-            
-            // Reset Teilnehmerverwaltung auf Standard (nur 1 Kind)
-            function resetParticipantManagementForm() {
-                // Nur Kind 1 anzeigen
-                if (child2Div) child2Div.classList.add('hidden');
-                if (child3Div) child3Div.classList.add('hidden');
-                if (addSiblingBtn) addSiblingBtn.classList.remove('hidden');
-                
-                // Felder leeren
-                if (document.getElementById('child1-first-name')) document.getElementById('child1-first-name').value = '';
-                if (document.getElementById('child1-last-name')) document.getElementById('child1-last-name').value = '';
-                if (document.getElementById('child2-first-name')) document.getElementById('child2-first-name').value = '';
-                if (document.getElementById('child2-last-name')) document.getElementById('child2-last-name').value = '';
-                if (document.getElementById('child3-first-name')) document.getElementById('child3-first-name').value = '';
-                if (document.getElementById('child3-last-name')) document.getElementById('child3-last-name').value = '';
-                if (newParticipantStreetInput) newParticipantStreetInput.value = '';
-                if (newParticipantCityInput) newParticipantCityInput.value = '';
-                if (newParticipantPhoneInput) newParticipantPhoneInput.value = '';
-                
-                // Checkboxen auf Standard setzen
-                if (noDataCheckbox) noDataCheckbox.checked = false;
-                if (newParticipantCanGoHomeAloneCheckbox) newParticipantCanGoHomeAloneCheckbox.checked = true;
-                if (newParticipantPaidCheckbox) newParticipantPaidCheckbox.checked = true;
-                
-                // Adressfelder wieder aktivieren
-                if (newParticipantStreetInput) newParticipantStreetInput.disabled = false;
-                if (newParticipantCityInput) newParticipantCityInput.disabled = false;
-                if (newParticipantPhoneInput) newParticipantPhoneInput.disabled = false;
             }
 
             function renderParticipantList() {
@@ -1769,7 +1737,6 @@
                     } else if (sectionId === 'participant-management-section' && participantManagementSection) {
                         participantManagementSection.classList.remove('hidden');
                         if (navParticipantManagementButton) navParticipantManagementButton.classList.add('active');
-                        // Formular zurücksetzen beim Öffnen
                         resetParticipantManagementForm();
                     } else if (sectionId === 'admin-participant-overview-section' && adminParticipantOverviewSection) {
                         adminParticipantOverviewSection.classList.remove('hidden');
@@ -1786,27 +1753,20 @@
                 }
             }
 
-            // Admin Overlay für Betreuungsleitung
             function showAdminOverlay() {
                 const participantManagementClone = participantManagementSection.cloneNode(true);
                 participantManagementClone.classList.remove('hidden');
                 adminOverlayContent.innerHTML = '';
                 adminOverlayContent.appendChild(participantManagementClone);
                 
-                // Excel-Import im Overlay ausblenden (Betreuungsleitung)
                 const overlayExcelContainer = adminOverlayContent.querySelector('#excel-import-container');
                 if (overlayExcelContainer) overlayExcelContainer.classList.add('hidden');
                 
-                // Formular im Overlay zurücksetzen
-                const overlayChild2Div = adminOverlayContent.querySelector('#child2-container');
-                const overlayChild3Div = adminOverlayContent.querySelector('#child3-container');
-                const overlayAddSiblingBtn = adminOverlayContent.querySelector('#add-sibling-row-button');
-                if (overlayChild2Div) overlayChild2Div.classList.add('hidden');
-                if (overlayChild3Div) overlayChild3Div.classList.add('hidden');
-                if (overlayAddSiblingBtn) overlayAddSiblingBtn.classList.remove('hidden');
-                
                 const overlayAddButton = adminOverlayContent.querySelector('#add-participant-manual-button');
                 const overlayAddAndSignin = adminOverlayContent.querySelector('#add-and-signin-participant-button');
+                const overlayAddSiblingBtn = adminOverlayContent.querySelector('#add-sibling-row-button');
+                const overlayChild2Div = adminOverlayContent.querySelector('#child2-container');
+                const overlayChild3Div = adminOverlayContent.querySelector('#child3-container');
                 const overlayNoDataCheckbox = adminOverlayContent.querySelector('#no-data-checkbox');
                 const overlayStreetInput = adminOverlayContent.querySelector('#new-participant-street');
                 const overlayCityInput = adminOverlayContent.querySelector('#new-participant-city');
@@ -1837,6 +1797,7 @@
                         adminOverlayContent.querySelector('#child1-first-name').value = '';
                         adminOverlayContent.querySelector('#child1-last-name').value = '';
                         renderParticipantList();
+                        resetParticipantManagementForm();
                     });
                 }
                 
@@ -1865,6 +1826,18 @@
                         adminOverlayContent.querySelector('#child1-first-name').value = '';
                         adminOverlayContent.querySelector('#child1-last-name').value = '';
                         renderParticipantList();
+                        resetParticipantManagementForm();
+                    });
+                }
+                
+                if (overlayAddSiblingBtn && overlayChild2Div && overlayChild3Div) {
+                    overlayAddSiblingBtn.addEventListener('click', () => {
+                        if (overlayChild2Div.classList.contains('hidden')) {
+                            overlayChild2Div.classList.remove('hidden');
+                        } else if (overlayChild3Div.classList.contains('hidden')) {
+                            overlayChild3Div.classList.remove('hidden');
+                            overlayAddSiblingBtn.classList.add('hidden');
+                        }
                     });
                 }
                 
@@ -1932,7 +1905,6 @@
                 }
             }
 
-            // Inactivity Timer (1 Minute)
             let inactivityTimer;
             const INACTIVITY_LIMIT = 60 * 1000;
             function resetInactivityTimer() {
@@ -1996,7 +1968,6 @@
                 });
             });
 
-            // Alarm Panel Link (für Betreuer und Betreuungsleitung)
             if (alarmPanelLink) {
                 alarmPanelLink.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -2004,7 +1975,6 @@
                 });
             }
             
-            // Admin Alarm Button
             if (navAlarmButton) {
                 navAlarmButton.addEventListener('click', () => {
                     showAlarmModal();
@@ -2015,7 +1985,6 @@
                 closeAdminOverlay.addEventListener('click', hideAdminOverlay);
             }
             
-            // Alarm Modal Event Listeners
             if (closeAlarmModal) closeAlarmModal.addEventListener('click', hideAlarmModal);
             if (closeAlarmModalBottom) closeAlarmModalBottom.addEventListener('click', hideAlarmModal);
             
@@ -2096,6 +2065,17 @@
             navParticipantOverviewButton?.addEventListener('click', () => showAdminSection('admin-participant-overview-section'));
             navProgramSettingsButton?.addEventListener('click', () => showAdminSection('program-settings-section'));
 
+            if (addSiblingBtn) {
+                addSiblingBtn.addEventListener('click', () => {
+                    if (child2Div?.classList.contains('hidden')) {
+                        child2Div.classList.remove('hidden');
+                    } else if (child3Div?.classList.contains('hidden')) {
+                        child3Div.classList.remove('hidden');
+                        addSiblingBtn.classList.add('hidden');
+                    }
+                });
+            }
+
             noDataCheckbox?.addEventListener('change', function() {
                 const disabled = this.checked;
                 if (newParticipantStreetInput) newParticipantStreetInput.disabled = disabled;
@@ -2127,7 +2107,6 @@
             
             confirmPickupFamily?.addEventListener('click', confirmFamilyPickup);
 
-            // Instructions Screen
             const instructionsLink = document.getElementById('instructions-link');
             const closeInstructionsButton = document.getElementById('close-instructions');
             
@@ -2146,7 +2125,6 @@
                 });
             }
 
-            // Global click handler for participant actions and info icons
             document.addEventListener('click', (e) => {
                 const target = e.target;
                 
@@ -2154,7 +2132,6 @@
                     const pid = target.dataset.id;
                     const action = target.dataset.action;
                     
-                    // Alarm toggle present
                     if (action === 'toggle-present') {
                         togglePresent(pid);
                         return;
@@ -2417,8 +2394,7 @@
                 addChild(firstName, lastName, regType, noData, street, city, phone, paid, canGoHomeAlone, false);
                 saveParticipants();
                 showAdminMessage(addParticipantManualMessage, `${firstName} ${lastName} hinzugefügt`, false);
-                document.getElementById('child1-first-name').value = '';
-                document.getElementById('child1-last-name').value = '';
+                resetParticipantManagementForm();
                 renderParticipantList();
             });
 
@@ -2442,8 +2418,7 @@
                 addChild(firstName, lastName, regType, noData, street, city, phone, paid, canGoHomeAlone, true);
                 saveParticipants();
                 showAdminMessage(addParticipantManualMessage, `${firstName} ${lastName} hinzugefügt und angemeldet`, false);
-                document.getElementById('child1-first-name').value = '';
-                document.getElementById('child1-last-name').value = '';
+                resetParticipantManagementForm();
                 renderParticipantList();
             });
 
@@ -2510,7 +2485,6 @@
 
             ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(ev => document.addEventListener(ev, resetInactivityTimer, true));
 
-            // Init
             loadUsers();
             loadParticipants();
             loadControlMode();
