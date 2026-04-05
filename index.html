@@ -511,6 +511,11 @@
             background: #007aff;
             color: white;
         }
+        
+        /* Suchfeld im Alarm-Modal */
+        .alarm-search-input {
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -609,6 +614,9 @@
                     </div>
                 </div>
                 
+                <!-- Suchfeld -->
+                <input type="text" id="alarm-search-input" placeholder="Teilnehmer suchen..." class="glass-input w-full p-2 rounded-button alarm-search-input">
+                
                 <!-- Filter-Buttons -->
                 <div class="alarm-filter-buttons">
                     <button data-filter="all" class="alarm-filter-btn active">Alle</button>
@@ -618,6 +626,11 @@
                 
                 <!-- Teilnehmerliste für Alarm -->
                 <div id="alarm-participant-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                
+                <!-- Reset-Button nur für Admin sichtbar -->
+                <div id="alarm-reset-container" class="hidden mt-4">
+                    <button id="reset-alarm-button" class="glass-button-danger w-full py-2 rounded-button">Alarm zurücksetzen (alle Anwesenheitsmarkierungen entfernen)</button>
+                </div>
                 
                 <button id="close-alarm-modal-bottom" class="glass-button w-full mt-4 py-2 rounded-button">Schließen</button>
             </div>
@@ -649,6 +662,7 @@
                 <button id="nav-user-management" class="admin-nav-button rounded-button">Benutzerverwaltung</button>
                 <button id="nav-participant-management" class="admin-nav-button rounded-button">Teilnehmerverwaltung</button>
                 <button id="nav-participant-overview" class="admin-nav-button rounded-button">Teilnehmerübersicht</button>
+                <button id="nav-alarm" class="admin-nav-button rounded-button">🚨 Räumungsalarm</button>
                 <button id="nav-program-settings" class="admin-nav-button rounded-button">Programmeinstellungen</button>
             </div>
             <div id="admin-section-wrapper" class="hidden">
@@ -675,7 +689,7 @@
                     </div>
                 </div>
 
-                <!-- Participant Management Template -->
+                <!-- Participant Management Template (ohne Geburtsdatum) -->
                 <div id="participant-management-section" class="glass-panel p-4 hidden">
                     <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Teilnehmerverwaltung</h3>
                     <div class="mb-5 border-b pb-4">
@@ -702,19 +716,16 @@
                                 <p class="text-xs font-bold text-[#007aff] mb-2">Kind 1</p>
                                 <input type="text" id="child1-first-name" placeholder="Vorname" class="glass-input w-full p-2 mb-2 rounded-button">
                                 <input type="text" id="child1-last-name" placeholder="Nachname" class="glass-input w-full p-2 mb-2 rounded-button">
-                                <input type="text" id="child1-birth" placeholder="Geburtsdatum (TT.MM.JJJJ)" class="glass-input w-full p-2 rounded-button">
                             </div>
                             <div id="child2-container" class="p-3 rounded-2xl border border-[rgba(0,0,0,0.1)] hidden">
                                 <p class="text-xs font-bold text-[#007aff] mb-2">Kind 2</p>
                                 <input type="text" id="child2-first-name" placeholder="Vorname" class="glass-input w-full p-2 mb-2 rounded-button">
                                 <input type="text" id="child2-last-name" placeholder="Nachname" class="glass-input w-full p-2 mb-2 rounded-button">
-                                <input type="text" id="child2-birth" placeholder="Geburtsdatum (TT.MM.JJJJ)" class="glass-input w-full p-2 rounded-button">
                             </div>
                             <div id="child3-container" class="p-3 rounded-2xl border border-[rgba(0,0,0,0.1)] hidden">
                                 <p class="text-xs font-bold text-[#007aff] mb-2">Kind 3</p>
                                 <input type="text" id="child3-first-name" placeholder="Vorname" class="glass-input w-full p-2 mb-2 rounded-button">
                                 <input type="text" id="child3-last-name" placeholder="Nachname" class="glass-input w-full p-2 mb-2 rounded-button">
-                                <input type="text" id="child3-birth" placeholder="Geburtsdatum (TT.MM.JJJJ)" class="glass-input w-full p-2 rounded-button">
                             </div>
                             <button type="button" id="add-sibling-row-button" class="text-[#007aff] text-sm font-bold flex items-center hover:text-[#0051d5] transition rounded-button px-3 py-2 bg-white/50">
                                 <span class="mr-1 text-lg">+</span> Geschwisterkind hinzufügen
@@ -934,12 +945,15 @@
             const closeAlarmModal = document.getElementById('close-alarm-modal');
             const closeAlarmModalBottom = document.getElementById('close-alarm-modal-bottom');
             const alarmParticipantList = document.getElementById('alarm-participant-list');
+            const alarmSearchInput = document.getElementById('alarm-search-input');
             const statSignedinCount = document.getElementById('stat-signedin-count');
             const statPresentCount = document.getElementById('stat-present-count');
             const statMissingCount = document.getElementById('stat-missing-count');
             const statSignedinCard = document.getElementById('stat-signedin');
             const statPresentCard = document.getElementById('stat-present');
             const statMissingCard = document.getElementById('stat-missing');
+            const alarmResetContainer = document.getElementById('alarm-reset-container');
+            const resetAlarmButton = document.getElementById('reset-alarm-button');
 
             const newUsernameInput = document.getElementById('new-username');
             const newUserCodeInput = document.getElementById('new-user-code');
@@ -1024,6 +1038,7 @@
             const navParticipantManagementButton = document.getElementById('nav-participant-management');
             const navParticipantOverviewButton = document.getElementById('nav-participant-overview');
             const navProgramSettingsButton = document.getElementById('nav-program-settings');
+            const navAlarmButton = document.getElementById('nav-alarm');
             const participantManagementSection = document.getElementById('participant-management-section');
             const userManagementSection = document.getElementById('user-management-section');
             const programSettingsSection = document.getElementById('program-settings-section');
@@ -1068,6 +1083,7 @@
             var currentParticipantInDetailsModal = null;
             var currentConfirmAction = null;
             var currentAlarmFilter = 'all';
+            var currentAlarmSearchTerm = '';
             
             // Family action variables
             var pendingFamilyAction = null;
@@ -1158,7 +1174,7 @@
             // Alarm Functions
             function updateAlarmStats() {
                 const signedInParticipants = participants.filter(p => p.status === 'signedIn');
-                const presentParticipants = participants.filter(p => p.present === true);
+                const presentParticipants = signedInParticipants.filter(p => p.present === true);
                 const missingParticipants = signedInParticipants.filter(p => !p.present);
                 
                 if (statSignedinCount) statSignedinCount.textContent = signedInParticipants.length;
@@ -1170,14 +1186,14 @@
                 if (!alarmParticipantList) return;
                 
                 const signedInParticipants = participants.filter(p => p.status === 'signedIn');
+                const searchTerm = currentAlarmSearchTerm.toLowerCase();
                 
-                let filteredParticipants = [];
-                if (currentAlarmFilter === 'all') {
-                    filteredParticipants = signedInParticipants;
-                } else if (currentAlarmFilter === 'present') {
-                    filteredParticipants = signedInParticipants.filter(p => p.present === true);
+                let filteredParticipants = signedInParticipants.filter(p => p.name.toLowerCase().includes(searchTerm));
+                
+                if (currentAlarmFilter === 'present') {
+                    filteredParticipants = filteredParticipants.filter(p => p.present === true);
                 } else if (currentAlarmFilter === 'missing') {
-                    filteredParticipants = signedInParticipants.filter(p => !p.present);
+                    filteredParticipants = filteredParticipants.filter(p => !p.present);
                 }
                 
                 alarmParticipantList.innerHTML = '';
@@ -1230,12 +1246,28 @@
                 }
             }
             
+            function resetAlarm() {
+                participants.forEach(p => {
+                    p.present = false;
+                });
+                saveParticipants();
+                renderAlarmList();
+                renderParticipantList();
+                showActionFeedback('Alle Anwesenheitsmarkierungen wurden zurückgesetzt', true);
+            }
+            
             function showAlarmModal() {
-                // Initialize present status for all participants if not exists
                 participants.forEach(p => {
                     if (p.present === undefined) p.present = false;
                 });
                 saveParticipants();
+                currentAlarmSearchTerm = '';
+                if (alarmSearchInput) alarmSearchInput.value = '';
+                currentAlarmFilter = 'all';
+                document.querySelectorAll('.alarm-filter-btn').forEach(btn => {
+                    if (btn.dataset.filter === 'all') btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
                 renderAlarmList();
                 alarmModal.classList.remove('hidden');
             }
@@ -1608,6 +1640,28 @@
                 pendingFamilyPickupMembers = null;
             }
 
+            // Funktion zum Hinzufügen eines Kindes (für beide Buttons)
+            function addChild(firstName, lastName, regType, noData, street, city, phone, paid, canGoHomeAlone, signIn = false) {
+                const newP = {
+                    id: Date.now().toString(),
+                    name: `${firstName} ${lastName}`,
+                    status: signIn ? 'signedIn' : 'available',
+                    registrationType: regType,
+                    street: noData ? '' : street,
+                    city: noData ? '' : city,
+                    phone: noData ? '' : phone,
+                    paid: paid,
+                    canGoHomeAlone: canGoHomeAlone,
+                    noData: noData,
+                    pickedUpBy: '',
+                    present: false,
+                    activityHistory: signIn ? [{ type: 'Angemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'System' }] : [],
+                    comments: []
+                };
+                participants.push(newP);
+                return newP;
+            }
+
             function renderParticipantList() {
                 if (!unifiedParticipantList) return;
                 unifiedParticipantList.innerHTML = '';
@@ -1731,73 +1785,104 @@
                 const overlayCityInput = adminOverlayContent.querySelector('#new-participant-city');
                 const overlayPhoneInput = adminOverlayContent.querySelector('#new-participant-phone');
                 
+                // Hilfsfunktion für Overlay-Hinzufügen
+                const getChildData = (prefix) => {
+                    const firstName = adminOverlayContent.querySelector(`#${prefix}-first-name`)?.value.trim();
+                    const lastName = adminOverlayContent.querySelector(`#${prefix}-last-name`)?.value.trim();
+                    return { firstName, lastName };
+                };
+                
                 if (overlayAddButton) {
                     overlayAddButton.addEventListener('click', () => {
-                        const first = adminOverlayContent.querySelector('#child1-first-name')?.value.trim();
-                        const last = adminOverlayContent.querySelector('#child1-last-name')?.value.trim();
-                        if (!first || !last) {
-                            const msgDiv = adminOverlayContent.querySelector('#add-participant-manual-message');
-                            if (msgDiv) showAdminMessage(msgDiv, "Vor- und Nachname erforderlich", true);
-                            return;
-                        }
+                        const child1 = getChildData('child1');
+                        const child2 = getChildData('child2');
+                        const child3 = getChildData('child3');
+                        
                         const noData = overlayNoDataCheckbox?.checked || false;
-                        const newP = {
-                            id: Date.now().toString(),
-                            name: `${first} ${last}`,
-                            status: 'available',
-                            registrationType: newParticipantRegtypeSelect?.value || 'Tagesanmeldung',
-                            street: noData ? '' : (overlayStreetInput?.value.trim() || ''),
-                            city: noData ? '' : (overlayCityInput?.value.trim() || ''),
-                            phone: noData ? '' : (overlayPhoneInput?.value.trim() || ''),
-                            paid: newParticipantPaidCheckbox?.checked || false,
-                            canGoHomeAlone: newParticipantCanGoHomeAloneCheckbox?.checked || false,
-                            noData: noData,
-                            pickedUpBy: '',
-                            activityHistory: [],
-                            comments: []
-                        };
-                        participants.push(newP);
-                        saveParticipants();
-                        const msgDiv = adminOverlayContent.querySelector('#add-participant-manual-message');
-                        if (msgDiv) showAdminMessage(msgDiv, `${first} ${last} hinzugefügt`, false);
-                        adminOverlayContent.querySelector('#child1-first-name').value = '';
-                        adminOverlayContent.querySelector('#child1-last-name').value = '';
-                        renderParticipantList();
+                        const regType = newParticipantRegtypeSelect?.value || 'Tagesanmeldung';
+                        const street = overlayStreetInput?.value.trim() || '';
+                        const city = overlayCityInput?.value.trim() || '';
+                        const phone = overlayPhoneInput?.value.trim() || '';
+                        const paid = newParticipantPaidCheckbox?.checked || false;
+                        const canGoHomeAlone = newParticipantCanGoHomeAloneCheckbox?.checked || false;
+                        
+                        let addedCount = 0;
+                        
+                        if (child1.firstName && child1.lastName) {
+                            addChild(child1.firstName, child1.lastName, regType, noData, street, city, phone, paid, canGoHomeAlone, false);
+                            addedCount++;
+                            adminOverlayContent.querySelector('#child1-first-name').value = '';
+                            adminOverlayContent.querySelector('#child1-last-name').value = '';
+                        }
+                        if (child2.firstName && child2.lastName && !overlayChild2Div?.classList.contains('hidden')) {
+                            addChild(child2.firstName, child2.lastName, regType, noData, street, city, phone, paid, canGoHomeAlone, false);
+                            addedCount++;
+                            adminOverlayContent.querySelector('#child2-first-name').value = '';
+                            adminOverlayContent.querySelector('#child2-last-name').value = '';
+                        }
+                        if (child3.firstName && child3.lastName && !overlayChild3Div?.classList.contains('hidden')) {
+                            addChild(child3.firstName, child3.lastName, regType, noData, street, city, phone, paid, canGoHomeAlone, false);
+                            addedCount++;
+                            adminOverlayContent.querySelector('#child3-first-name').value = '';
+                            adminOverlayContent.querySelector('#child3-last-name').value = '';
+                        }
+                        
+                        if (addedCount > 0) {
+                            saveParticipants();
+                            const msgDiv = adminOverlayContent.querySelector('#add-participant-manual-message');
+                            if (msgDiv) showAdminMessage(msgDiv, `${addedCount} Kind(er) hinzugefügt`, false);
+                            renderParticipantList();
+                        } else {
+                            const msgDiv = adminOverlayContent.querySelector('#add-participant-manual-message');
+                            if (msgDiv) showAdminMessage(msgDiv, "Bitte mindestens ein Kind mit Vor- und Nachname eingeben", true);
+                        }
                     });
                 }
                 
                 if (overlayAddAndSignin) {
                     overlayAddAndSignin.addEventListener('click', () => {
-                        const first = adminOverlayContent.querySelector('#child1-first-name')?.value.trim();
-                        const last = adminOverlayContent.querySelector('#child1-last-name')?.value.trim();
-                        if (!first || !last) {
-                            const msgDiv = adminOverlayContent.querySelector('#add-participant-manual-message');
-                            if (msgDiv) showAdminMessage(msgDiv, "Vor- und Nachname erforderlich", true);
-                            return;
-                        }
+                        const child1 = getChildData('child1');
+                        const child2 = getChildData('child2');
+                        const child3 = getChildData('child3');
+                        
                         const noData = overlayNoDataCheckbox?.checked || false;
-                        const newP = {
-                            id: Date.now().toString(),
-                            name: `${first} ${last}`,
-                            status: 'signedIn',
-                            registrationType: newParticipantRegtypeSelect?.value || 'Tagesanmeldung',
-                            street: noData ? '' : (overlayStreetInput?.value.trim() || ''),
-                            city: noData ? '' : (overlayCityInput?.value.trim() || ''),
-                            phone: noData ? '' : (overlayPhoneInput?.value.trim() || ''),
-                            paid: newParticipantPaidCheckbox?.checked || false,
-                            canGoHomeAlone: newParticipantCanGoHomeAloneCheckbox?.checked || false,
-                            noData: noData,
-                            pickedUpBy: '',
-                            activityHistory: [{ type: 'Angemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'System' }],
-                            comments: []
-                        };
-                        participants.push(newP);
-                        saveParticipants();
-                        const msgDiv = adminOverlayContent.querySelector('#add-participant-manual-message');
-                        if (msgDiv) showAdminMessage(msgDiv, `${first} ${last} hinzugefügt und angemeldet`, false);
-                        adminOverlayContent.querySelector('#child1-first-name').value = '';
-                        adminOverlayContent.querySelector('#child1-last-name').value = '';
-                        renderParticipantList();
+                        const regType = newParticipantRegtypeSelect?.value || 'Tagesanmeldung';
+                        const street = overlayStreetInput?.value.trim() || '';
+                        const city = overlayCityInput?.value.trim() || '';
+                        const phone = overlayPhoneInput?.value.trim() || '';
+                        const paid = newParticipantPaidCheckbox?.checked || false;
+                        const canGoHomeAlone = newParticipantCanGoHomeAloneCheckbox?.checked || false;
+                        
+                        let addedCount = 0;
+                        
+                        if (child1.firstName && child1.lastName) {
+                            addChild(child1.firstName, child1.lastName, regType, noData, street, city, phone, paid, canGoHomeAlone, true);
+                            addedCount++;
+                            adminOverlayContent.querySelector('#child1-first-name').value = '';
+                            adminOverlayContent.querySelector('#child1-last-name').value = '';
+                        }
+                        if (child2.firstName && child2.lastName && !overlayChild2Div?.classList.contains('hidden')) {
+                            addChild(child2.firstName, child2.lastName, regType, noData, street, city, phone, paid, canGoHomeAlone, true);
+                            addedCount++;
+                            adminOverlayContent.querySelector('#child2-first-name').value = '';
+                            adminOverlayContent.querySelector('#child2-last-name').value = '';
+                        }
+                        if (child3.firstName && child3.lastName && !overlayChild3Div?.classList.contains('hidden')) {
+                            addChild(child3.firstName, child3.lastName, regType, noData, street, city, phone, paid, canGoHomeAlone, true);
+                            addedCount++;
+                            adminOverlayContent.querySelector('#child3-first-name').value = '';
+                            adminOverlayContent.querySelector('#child3-last-name').value = '';
+                        }
+                        
+                        if (addedCount > 0) {
+                            saveParticipants();
+                            const msgDiv = adminOverlayContent.querySelector('#add-participant-manual-message');
+                            if (msgDiv) showAdminMessage(msgDiv, `${addedCount} Kind(er) hinzugefügt und angemeldet`, false);
+                            renderParticipantList();
+                        } else {
+                            const msgDiv = adminOverlayContent.querySelector('#add-participant-manual-message');
+                            if (msgDiv) showAdminMessage(msgDiv, "Bitte mindestens ein Kind mit Vor- und Nachname eingeben", true);
+                        }
                     });
                 }
                 
@@ -1910,6 +1995,8 @@
                                 showAdminSection('');
                                 if (alarmLinkContainer) alarmLinkContainer.classList.add('hidden');
                                 if (adminLinkContainer) adminLinkContainer.classList.add('hidden');
+                                // Admin sieht Reset-Button im Alarm
+                                if (alarmResetContainer) alarmResetContainer.classList.remove('hidden');
                                 showMessage(`Willkommen Admin ${user.username}`, false);
                             } else if (user.status === 'Betreuungsleitung') {
                                 adminContentScreen.classList.add('hidden');
@@ -1919,6 +2006,8 @@
                                 renderParticipantList();
                                 if (adminLinkContainer) adminLinkContainer.classList.remove('hidden');
                                 if (alarmLinkContainer) alarmLinkContainer.classList.remove('hidden');
+                                // Betreuungsleitung sieht keinen Reset-Button im Alarm
+                                if (alarmResetContainer) alarmResetContainer.classList.add('hidden');
                                 showMessage(`Willkommen ${user.username} (Betreuungsleitung)`, false);
                             } else {
                                 adminContentScreen.classList.add('hidden');
@@ -1928,6 +2017,7 @@
                                 renderParticipantList();
                                 if (adminLinkContainer) adminLinkContainer.classList.add('hidden');
                                 if (alarmLinkContainer) alarmLinkContainer.classList.remove('hidden');
+                                if (alarmResetContainer) alarmResetContainer.classList.add('hidden');
                                 showMessage(`Willkommen ${user.username}`, false);
                             }
                         } else {
@@ -1956,6 +2046,13 @@
                 });
             }
             
+            // Admin Alarm Button
+            if (navAlarmButton) {
+                navAlarmButton.addEventListener('click', () => {
+                    showAlarmModal();
+                });
+            }
+            
             if (closeAdminOverlay) {
                 closeAdminOverlay.addEventListener('click', hideAdminOverlay);
             }
@@ -1963,6 +2060,15 @@
             // Alarm Modal Event Listeners
             if (closeAlarmModal) closeAlarmModal.addEventListener('click', hideAlarmModal);
             if (closeAlarmModalBottom) closeAlarmModalBottom.addEventListener('click', hideAlarmModal);
+            
+            if (resetAlarmButton) resetAlarmButton.addEventListener('click', resetAlarm);
+            
+            if (alarmSearchInput) {
+                alarmSearchInput.addEventListener('input', (e) => {
+                    currentAlarmSearchTerm = e.target.value;
+                    renderAlarmList();
+                });
+            }
             
             if (statSignedinCard) statSignedinCard.addEventListener('click', showAllParticipants);
             if (statPresentCard) statPresentCard.addEventListener('click', showPresentParticipants);
@@ -2121,7 +2227,6 @@
                             p.activityHistory.push({ type: 'Angemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt' });
                             showActionFeedback(`${p.name} angemeldet`, true);
                             saveParticipants();
-                            // Reset search field after action
                             resetSearchAndFilter();
                         } else if (action === 'abmelden' && p.status === 'signedIn') {
                             if (!p.canGoHomeAlone) {
@@ -2138,7 +2243,6 @@
                                 p.activityHistory.push({ type: 'Abgemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt', pickup: 'Alleine nach Hause' });
                                 showActionFeedback(`${p.name} abgemeldet`, false);
                                 saveParticipants();
-                                // Reset search field after action
                                 resetSearchAndFilter();
                             }
                         }
@@ -2269,7 +2373,6 @@
                         participants[idx].activityHistory.push({ type: 'Abgemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt', pickup: person });
                         showActionFeedback(`${currentParticipantBeingPickedUp.name} von ${person} abgeholt`, false);
                         saveParticipants();
-                        // Reset search field after action
                         resetSearchAndFilter();
                     }
                 }
@@ -2324,6 +2427,7 @@
                                     paid: bezahltIdx !== -1 ? (String(vals[bezahltIdx]).toLowerCase() === 'ja' || String(vals[bezahltIdx]).toLowerCase() === 'true') : false,
                                     canGoHomeAlone: alleinIdx !== -1 ? (String(vals[alleinIdx]).toLowerCase() === 'ja' || String(vals[alleinIdx]).toLowerCase() === 'true') : false,
                                     noData: false,
+                                    present: false,
                                     pickedUpBy: '',
                                     activityHistory: [],
                                     comments: []
@@ -2342,60 +2446,96 @@
             });
 
             addParticipantManualButton?.addEventListener('click', () => {
-                const first = document.getElementById('child1-first-name')?.value.trim();
-                const last = document.getElementById('child1-last-name')?.value.trim();
-                if (!first || !last) { showAdminMessage(addParticipantManualMessage, "Vor- und Nachname erforderlich", true); return; }
+                const child1First = document.getElementById('child1-first-name')?.value.trim();
+                const child1Last = document.getElementById('child1-last-name')?.value.trim();
+                const child2First = document.getElementById('child2-first-name')?.value.trim();
+                const child2Last = document.getElementById('child2-last-name')?.value.trim();
+                const child3First = document.getElementById('child3-first-name')?.value.trim();
+                const child3Last = document.getElementById('child3-last-name')?.value.trim();
+                
                 const noData = noDataCheckbox?.checked || false;
-                const newP = {
-                    id: Date.now().toString(),
-                    name: `${first} ${last}`,
-                    status: 'available',
-                    registrationType: newParticipantRegtypeSelect?.value || 'Tagesanmeldung',
-                    street: noData ? '' : (newParticipantStreetInput?.value.trim() || ''),
-                    city: noData ? '' : (newParticipantCityInput?.value.trim() || ''),
-                    phone: noData ? '' : (newParticipantPhoneInput?.value.trim() || ''),
-                    paid: newParticipantPaidCheckbox?.checked || false,
-                    canGoHomeAlone: newParticipantCanGoHomeAloneCheckbox?.checked || false,
-                    noData: noData,
-                    pickedUpBy: '',
-                    activityHistory: [],
-                    comments: []
-                };
-                participants.push(newP);
-                saveParticipants();
-                showAdminMessage(addParticipantManualMessage, `${first} ${last} hinzugefügt`, false);
-                document.getElementById('child1-first-name').value = '';
-                document.getElementById('child1-last-name').value = '';
-                renderParticipantList();
+                const regType = newParticipantRegtypeSelect?.value || 'Tagesanmeldung';
+                const street = newParticipantStreetInput?.value.trim() || '';
+                const city = newParticipantCityInput?.value.trim() || '';
+                const phone = newParticipantPhoneInput?.value.trim() || '';
+                const paid = newParticipantPaidCheckbox?.checked || false;
+                const canGoHomeAlone = newParticipantCanGoHomeAloneCheckbox?.checked || false;
+                
+                let addedCount = 0;
+                
+                if (child1First && child1Last) {
+                    addChild(child1First, child1Last, regType, noData, street, city, phone, paid, canGoHomeAlone, false);
+                    addedCount++;
+                    document.getElementById('child1-first-name').value = '';
+                    document.getElementById('child1-last-name').value = '';
+                }
+                if (child2First && child2Last && !child2Div?.classList.contains('hidden')) {
+                    addChild(child2First, child2Last, regType, noData, street, city, phone, paid, canGoHomeAlone, false);
+                    addedCount++;
+                    document.getElementById('child2-first-name').value = '';
+                    document.getElementById('child2-last-name').value = '';
+                }
+                if (child3First && child3Last && !child3Div?.classList.contains('hidden')) {
+                    addChild(child3First, child3Last, regType, noData, street, city, phone, paid, canGoHomeAlone, false);
+                    addedCount++;
+                    document.getElementById('child3-first-name').value = '';
+                    document.getElementById('child3-last-name').value = '';
+                }
+                
+                if (addedCount > 0) {
+                    saveParticipants();
+                    showAdminMessage(addParticipantManualMessage, `${addedCount} Kind(er) hinzugefügt`, false);
+                    renderParticipantList();
+                } else {
+                    showAdminMessage(addParticipantManualMessage, "Bitte mindestens ein Kind mit Vor- und Nachname eingeben", true);
+                }
             });
 
             const addAndSignin = document.getElementById('add-and-signin-participant-button');
             addAndSignin?.addEventListener('click', () => {
-                const first = document.getElementById('child1-first-name')?.value.trim();
-                const last = document.getElementById('child1-last-name')?.value.trim();
-                if (!first || !last) { showAdminMessage(addParticipantManualMessage, "Vor- und Nachname erforderlich", true); return; }
+                const child1First = document.getElementById('child1-first-name')?.value.trim();
+                const child1Last = document.getElementById('child1-last-name')?.value.trim();
+                const child2First = document.getElementById('child2-first-name')?.value.trim();
+                const child2Last = document.getElementById('child2-last-name')?.value.trim();
+                const child3First = document.getElementById('child3-first-name')?.value.trim();
+                const child3Last = document.getElementById('child3-last-name')?.value.trim();
+                
                 const noData = noDataCheckbox?.checked || false;
-                const newP = {
-                    id: Date.now().toString(),
-                    name: `${first} ${last}`,
-                    status: 'signedIn',
-                    registrationType: newParticipantRegtypeSelect?.value || 'Tagesanmeldung',
-                    street: noData ? '' : (newParticipantStreetInput?.value.trim() || ''),
-                    city: noData ? '' : (newParticipantCityInput?.value.trim() || ''),
-                    phone: noData ? '' : (newParticipantPhoneInput?.value.trim() || ''),
-                    paid: newParticipantPaidCheckbox?.checked || false,
-                    canGoHomeAlone: newParticipantCanGoHomeAloneCheckbox?.checked || false,
-                    noData: noData,
-                    pickedUpBy: '',
-                    activityHistory: [{ type: 'Angemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'System' }],
-                    comments: []
-                };
-                participants.push(newP);
-                saveParticipants();
-                showAdminMessage(addParticipantManualMessage, `${first} ${last} hinzugefügt und angemeldet`, false);
-                document.getElementById('child1-first-name').value = '';
-                document.getElementById('child1-last-name').value = '';
-                renderParticipantList();
+                const regType = newParticipantRegtypeSelect?.value || 'Tagesanmeldung';
+                const street = newParticipantStreetInput?.value.trim() || '';
+                const city = newParticipantCityInput?.value.trim() || '';
+                const phone = newParticipantPhoneInput?.value.trim() || '';
+                const paid = newParticipantPaidCheckbox?.checked || false;
+                const canGoHomeAlone = newParticipantCanGoHomeAloneCheckbox?.checked || false;
+                
+                let addedCount = 0;
+                
+                if (child1First && child1Last) {
+                    addChild(child1First, child1Last, regType, noData, street, city, phone, paid, canGoHomeAlone, true);
+                    addedCount++;
+                    document.getElementById('child1-first-name').value = '';
+                    document.getElementById('child1-last-name').value = '';
+                }
+                if (child2First && child2Last && !child2Div?.classList.contains('hidden')) {
+                    addChild(child2First, child2Last, regType, noData, street, city, phone, paid, canGoHomeAlone, true);
+                    addedCount++;
+                    document.getElementById('child2-first-name').value = '';
+                    document.getElementById('child2-last-name').value = '';
+                }
+                if (child3First && child3Last && !child3Div?.classList.contains('hidden')) {
+                    addChild(child3First, child3Last, regType, noData, street, city, phone, paid, canGoHomeAlone, true);
+                    addedCount++;
+                    document.getElementById('child3-first-name').value = '';
+                    document.getElementById('child3-last-name').value = '';
+                }
+                
+                if (addedCount > 0) {
+                    saveParticipants();
+                    showAdminMessage(addParticipantManualMessage, `${addedCount} Kind(er) hinzugefügt und angemeldet`, false);
+                    renderParticipantList();
+                } else {
+                    showAdminMessage(addParticipantManualMessage, "Bitte mindestens ein Kind mit Vor- und Nachname eingeben", true);
+                }
             });
 
             controlModeToggle?.addEventListener('change', () => {
