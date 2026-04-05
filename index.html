@@ -115,6 +115,16 @@
             background: rgba(255, 59, 48, 1);
         }
         
+        .glass-button-alarm {
+            background: rgba(0, 122, 255, 0.95);
+            border-color: rgba(0, 122, 255, 0.3);
+            color: white;
+        }
+        
+        .glass-button-alarm:hover {
+            background: rgba(0, 122, 255, 1);
+        }
+        
         .sort-select {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(4px);
@@ -223,6 +233,12 @@
             background: #ff3b30;
             color: white;
             box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+        }
+        
+        .participant-action-button.anwesend-button {
+            background: #007aff;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
         }
         
         .info-icon {
@@ -377,6 +393,7 @@
         .status-dot-green { background-color: #34c759; }
         .status-dot-gray { background-color: #8e8e93; }
         .status-dot-red { background-color: #ff3b30; }
+        .status-dot-blue { background-color: #007aff; }
         
         .participant-name {
             font-weight: 500;
@@ -419,7 +436,6 @@
             border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
-        /* Admin-Bereich für Betreuungsleitung (als Overlay/Modal) */
         .admin-overlay {
             position: fixed;
             top: 0;
@@ -442,6 +458,58 @@
             max-height: 90vh;
             overflow-y: auto;
             padding: 1.5rem;
+        }
+        
+        /* Alarm Modal Styles */
+        .alarm-stats {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-card {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .stat-card:hover {
+            background: rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #6c6c70;
+        }
+        
+        .alarm-filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .alarm-filter-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            background: rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .alarm-filter-btn.active {
+            background: #007aff;
+            color: white;
         }
     </style>
 </head>
@@ -491,6 +559,7 @@
                 Willkommen, <span id="betreuer-name-display" class="font-semibold text-[#007aff]"></span>! – 
                 <a href="#" id="instructions-link" class="text-[#007aff] hover:underline">Hilfe und Anleitung</a>
                 <span id="admin-link-container" class="hidden"> | <a href="#" id="admin-panel-link" class="text-[#007aff] hover:underline">Admin-Bereich</a></span>
+                <span id="alarm-link-container" class="hidden"> | <a href="#" id="alarm-panel-link" class="text-[#007aff] hover:underline">🚨 Räumungsalarm</a></span>
             </p>
             <div id="action-feedback-message" class="fixed top-0 left-0 w-full text-white text-center py-3 transform -translate-y-full transition-all duration-500 z-50 shadow-lg rounded-button" style="background: rgba(52,199,89,0.95); backdrop-filter: blur(8px);"></div>
             <button id="logout-button-main" class="glass-button w-full py-3 mt-4 rounded-button">
@@ -498,7 +567,7 @@
             </button>
         </div>
 
-        <!-- Instructions Screen (neu gestaltet) -->
+        <!-- Instructions Screen -->
         <div id="instructions-screen" class="hidden glass-panel p-5 max-w-md mx-auto">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold text-[#1d1d1f]">Anleitung</h3>
@@ -510,6 +579,47 @@
                 <p>ℹ️ Über den Info-Button können Details eingesehen und Kommentare hinzugefügt werden.</p>
                 <p>💬 Bei vorhandenen Kommentaren erscheint ein C vor dem Info-Button.</p>
                 <p>💾 Alle Änderungen werden automatisch gespeichert.</p>
+                <p>🚨 Bei einem Räumungsalarm können Sie die Anwesenheit der Kinder markieren.</p>
+            </div>
+        </div>
+
+        <!-- Alarm Modal -->
+        <div id="alarm-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
+            <div class="modal-content p-5 w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-[#1d1d1f]">🚨 Räumungsalarm - Anwesenheitskontrolle</h2>
+                    <button id="close-alarm-modal" class="text-[#8e8e93] hover:text-[#1d1d1f] text-2xl leading-none">&times;</button>
+                </div>
+                
+                <!-- Statistik-Karten -->
+                <div class="alarm-stats">
+                    <div class="grid grid-cols-3 gap-3">
+                        <div id="stat-signedin" class="stat-card">
+                            <div class="stat-number" id="stat-signedin-count">0</div>
+                            <div class="stat-label">Angemeldet (sollten da sein)</div>
+                        </div>
+                        <div id="stat-present" class="stat-card">
+                            <div class="stat-number" id="stat-present-count">0</div>
+                            <div class="stat-label">Anwesend (gezählt)</div>
+                        </div>
+                        <div id="stat-missing" class="stat-card">
+                            <div class="stat-number" id="stat-missing-count">0</div>
+                            <div class="stat-label">Fehlen noch</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filter-Buttons -->
+                <div class="alarm-filter-buttons">
+                    <button data-filter="all" class="alarm-filter-btn active">Alle</button>
+                    <button data-filter="present" class="alarm-filter-btn">Anwesend</button>
+                    <button data-filter="missing" class="alarm-filter-btn">Fehlen noch</button>
+                </div>
+                
+                <!-- Teilnehmerliste für Alarm -->
+                <div id="alarm-participant-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                
+                <button id="close-alarm-modal-bottom" class="glass-button w-full mt-4 py-2 rounded-button">Schließen</button>
             </div>
         </div>
 
@@ -565,7 +675,7 @@
                     </div>
                 </div>
 
-                <!-- Participant Management Template (wird auch für Overlay verwendet) -->
+                <!-- Participant Management Template -->
                 <div id="participant-management-section" class="glass-panel p-4 hidden">
                     <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Teilnehmerverwaltung</h3>
                     <div class="mb-5 border-b pb-4">
@@ -651,7 +761,7 @@
                     <p class="text-[#6c6c70] mb-3">Hier sehen Sie alle Teilnehmer und ihren aktuellen Status.</p>
                 </div>
 
-                <!-- Program Settings (nur für Admin sichtbar) -->
+                <!-- Program Settings -->
                 <div id="program-settings-section" class="glass-panel p-4 hidden">
                     <h3 class="text-lg font-semibold text-[#1d1d1f] mb-4">Programmeinstellungen</h3>
                     <label class="flex items-center space-x-2 mb-4">
@@ -813,9 +923,23 @@
             const betreuerNameDisplay = document.getElementById('betreuer-name-display');
             const adminLinkContainer = document.getElementById('admin-link-container');
             const adminPanelLink = document.getElementById('admin-panel-link');
+            const alarmLinkContainer = document.getElementById('alarm-link-container');
+            const alarmPanelLink = document.getElementById('alarm-panel-link');
             const adminOverlay = document.getElementById('admin-overlay');
             const closeAdminOverlay = document.getElementById('close-admin-overlay');
             const adminOverlayContent = document.getElementById('admin-overlay-content');
+            
+            // Alarm Modal Elements
+            const alarmModal = document.getElementById('alarm-modal');
+            const closeAlarmModal = document.getElementById('close-alarm-modal');
+            const closeAlarmModalBottom = document.getElementById('close-alarm-modal-bottom');
+            const alarmParticipantList = document.getElementById('alarm-participant-list');
+            const statSignedinCount = document.getElementById('stat-signedin-count');
+            const statPresentCount = document.getElementById('stat-present-count');
+            const statMissingCount = document.getElementById('stat-missing-count');
+            const statSignedinCard = document.getElementById('stat-signedin');
+            const statPresentCard = document.getElementById('stat-present');
+            const statMissingCard = document.getElementById('stat-missing');
 
             const newUsernameInput = document.getElementById('new-username');
             const newUserCodeInput = document.getElementById('new-user-code');
@@ -943,6 +1067,7 @@
             var controlModeActive = false;
             var currentParticipantInDetailsModal = null;
             var currentConfirmAction = null;
+            var currentAlarmFilter = 'all';
             
             // Family action variables
             var pendingFamilyAction = null;
@@ -989,6 +1114,13 @@
                 codeDisplay.textContent = '*'.repeat(enteredCode.length);
             }
 
+            // Reset search field after action
+            function resetSearchAndFilter() {
+                if (participantSearchInput) participantSearchInput.value = '';
+                if (sortSelect) sortSelect.value = 'firstNameAsc';
+                renderParticipantList();
+            }
+
             function getLastName(fullName) {
                 const parts = fullName.split(' ');
                 return parts.slice(1).join(' ') || '';
@@ -1021,6 +1153,123 @@
                     default:
                         return sorted;
                 }
+            }
+
+            // Alarm Functions
+            function updateAlarmStats() {
+                const signedInParticipants = participants.filter(p => p.status === 'signedIn');
+                const presentParticipants = participants.filter(p => p.present === true);
+                const missingParticipants = signedInParticipants.filter(p => !p.present);
+                
+                if (statSignedinCount) statSignedinCount.textContent = signedInParticipants.length;
+                if (statPresentCount) statPresentCount.textContent = presentParticipants.length;
+                if (statMissingCount) statMissingCount.textContent = missingParticipants.length;
+            }
+            
+            function renderAlarmList() {
+                if (!alarmParticipantList) return;
+                
+                const signedInParticipants = participants.filter(p => p.status === 'signedIn');
+                
+                let filteredParticipants = [];
+                if (currentAlarmFilter === 'all') {
+                    filteredParticipants = signedInParticipants;
+                } else if (currentAlarmFilter === 'present') {
+                    filteredParticipants = signedInParticipants.filter(p => p.present === true);
+                } else if (currentAlarmFilter === 'missing') {
+                    filteredParticipants = signedInParticipants.filter(p => !p.present);
+                }
+                
+                alarmParticipantList.innerHTML = '';
+                
+                filteredParticipants.forEach(p => {
+                    const item = document.createElement('li');
+                    item.className = `participant-item-container ${p.present ? 'present' : ''}`;
+                    const actionText = p.present ? 'Abwesend markieren' : 'Anwesend markieren';
+                    const btnClass = 'anwesend-button';
+                    const dotClass = p.present ? 'status-dot-blue' : 'status-dot-red';
+                    const aloneText = p.canGoHomeAlone ? 'Ja' : 'Nein';
+                    
+                    item.innerHTML = `
+                        <div class="participant-action-button-container">
+                            <button class="participant-action-button ${btnClass}" data-action="toggle-present" data-id="${p.id}">
+                                ${actionText}
+                            </button>
+                        </div>
+                        <div class="participant-content-wrapper">
+                            <div class="participant-left">
+                                <span class="status-dot ${dotClass}"></span>
+                                <span class="participant-name">${p.name}</span>
+                            </div>
+                            <div class="participant-right">
+                                <span class="participant-meta">${p.registrationType} | Alleine: ${aloneText}</span>
+                                <span class="info-icon" data-id="${p.id}">i</span>
+                            </div>
+                        </div>
+                    `;
+                    alarmParticipantList.appendChild(item);
+                    
+                    const wrapper = item.querySelector('.participant-content-wrapper');
+                    wrapper.addEventListener('pointerdown', handlePointerDown);
+                    wrapper.addEventListener('pointermove', handlePointerMove);
+                    wrapper.addEventListener('pointerup', handlePointerUp);
+                    wrapper.addEventListener('pointercancel', handlePointerCancel);
+                });
+                
+                updateAlarmStats();
+            }
+            
+            function togglePresent(participantId) {
+                const participant = participants.find(p => p.id === participantId);
+                if (participant && participant.status === 'signedIn') {
+                    participant.present = !participant.present;
+                    saveParticipants();
+                    renderAlarmList();
+                    renderParticipantList();
+                    showActionFeedback(`${participant.name} wurde ${participant.present ? 'als anwesend' : 'als abwesend'} markiert`, true);
+                }
+            }
+            
+            function showAlarmModal() {
+                // Initialize present status for all participants if not exists
+                participants.forEach(p => {
+                    if (p.present === undefined) p.present = false;
+                });
+                saveParticipants();
+                renderAlarmList();
+                alarmModal.classList.remove('hidden');
+            }
+            
+            function hideAlarmModal() {
+                alarmModal.classList.add('hidden');
+                renderParticipantList();
+            }
+            
+            function showMissingParticipants() {
+                currentAlarmFilter = 'missing';
+                document.querySelectorAll('.alarm-filter-btn').forEach(btn => {
+                    if (btn.dataset.filter === 'missing') btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+                renderAlarmList();
+            }
+            
+            function showPresentParticipants() {
+                currentAlarmFilter = 'present';
+                document.querySelectorAll('.alarm-filter-btn').forEach(btn => {
+                    if (btn.dataset.filter === 'present') btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+                renderAlarmList();
+            }
+            
+            function showAllParticipants() {
+                currentAlarmFilter = 'all';
+                document.querySelectorAll('.alarm-filter-btn').forEach(btn => {
+                    if (btn.dataset.filter === 'all') btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+                renderAlarmList();
             }
 
             // User Functions
@@ -1084,14 +1333,15 @@
                             paid: p.paid !== undefined ? p.paid : false,
                             canGoHomeAlone: p.canGoHomeAlone !== undefined ? p.canGoHomeAlone : false,
                             noData: p.noData || false,
+                            present: p.present || false,
                             pickedUpBy: p.pickedUpBy || '',
                             activityHistory: p.activityHistory || [],
                             comments: p.comments || []
                         }));
                     } else {
                         participants = [
-                            { id: Date.now() + 'A', name: 'Lea Schneider', status: 'available', registrationType: 'Tagesanmeldung', street: 'Musterweg 1', city: 'Musterstadt', phone: '01761234567', paid: true, canGoHomeAlone: false, noData: false, pickedUpBy: '', activityHistory: [], comments: [] },
-                            { id: Date.now() + 'B', name: 'Max Mustermann', status: 'available', registrationType: 'Wochenanmeldung', street: 'Beispielallee 5', city: 'Beispielort', phone: '01519876543', paid: false, canGoHomeAlone: true, noData: false, pickedUpBy: '', activityHistory: [], comments: [] }
+                            { id: Date.now() + 'A', name: 'Lea Schneider', status: 'available', registrationType: 'Tagesanmeldung', street: 'Musterweg 1', city: 'Musterstadt', phone: '01761234567', paid: true, canGoHomeAlone: false, noData: false, present: false, pickedUpBy: '', activityHistory: [], comments: [] },
+                            { id: Date.now() + 'B', name: 'Max Mustermann', status: 'available', registrationType: 'Wochenanmeldung', street: 'Beispielallee 5', city: 'Beispielort', phone: '01519876543', paid: false, canGoHomeAlone: true, noData: false, present: false, pickedUpBy: '', activityHistory: [], comments: [] }
                         ];
                         saveParticipants();
                     }
@@ -1102,7 +1352,7 @@
                 const toSave = participants.map(p => ({
                     id: p.id, name: p.name, status: p.status, registrationType: p.registrationType,
                     street: p.street, city: p.city, phone: p.phone, paid: p.paid,
-                    canGoHomeAlone: p.canGoHomeAlone, noData: p.noData, pickedUpBy: p.pickedUpBy,
+                    canGoHomeAlone: p.canGoHomeAlone, noData: p.noData, present: p.present || false, pickedUpBy: p.pickedUpBy,
                     activityHistory: p.activityHistory, comments: p.comments
                 }));
                 localStorage.setItem(LOCAL_STORAGE_PARTICIPANTS_KEY, JSON.stringify(toSave));
@@ -1462,13 +1712,15 @@
 
             // Admin Overlay für Betreuungsleitung
             function showAdminOverlay() {
-                // Kopiere den Inhalt der Teilnehmerverwaltung in den Overlay
                 const participantManagementClone = participantManagementSection.cloneNode(true);
                 participantManagementClone.classList.remove('hidden');
                 adminOverlayContent.innerHTML = '';
                 adminOverlayContent.appendChild(participantManagementClone);
                 
-                // Event-Listener für die Buttons im Overlay neu initialisieren
+                // Excel-Import im Overlay ausblenden (Betreuungsleitung)
+                const overlayExcelContainer = adminOverlayContent.querySelector('#excel-import-container');
+                if (overlayExcelContainer) overlayExcelContainer.classList.add('hidden');
+                
                 const overlayAddButton = adminOverlayContent.querySelector('#add-participant-manual-button');
                 const overlayAddAndSignin = adminOverlayContent.querySelector('#add-and-signin-participant-button');
                 const overlayAddSiblingBtn = adminOverlayContent.querySelector('#add-sibling-row-button');
@@ -1510,6 +1762,7 @@
                         if (msgDiv) showAdminMessage(msgDiv, `${first} ${last} hinzugefügt`, false);
                         adminOverlayContent.querySelector('#child1-first-name').value = '';
                         adminOverlayContent.querySelector('#child1-last-name').value = '';
+                        renderParticipantList();
                     });
                 }
                 
@@ -1590,6 +1843,7 @@
                 if (pickupModal) pickupModal.classList.add('hidden');
                 if (participantDetailsModal) participantDetailsModal.classList.add('hidden');
                 if (adminOverlay) adminOverlay.classList.add('hidden');
+                if (alarmModal) alarmModal.classList.add('hidden');
                 if (loginScreen) loginScreen.classList.remove('hidden');
                 
                 enteredCode = '';
@@ -1654,6 +1908,8 @@
                                 mainContentScreen.classList.add('hidden');
                                 adminContentScreen.classList.remove('hidden');
                                 showAdminSection('');
+                                if (alarmLinkContainer) alarmLinkContainer.classList.add('hidden');
+                                if (adminLinkContainer) adminLinkContainer.classList.add('hidden');
                                 showMessage(`Willkommen Admin ${user.username}`, false);
                             } else if (user.status === 'Betreuungsleitung') {
                                 adminContentScreen.classList.add('hidden');
@@ -1661,8 +1917,8 @@
                                 unifiedParticipantContainer.classList.remove('hidden');
                                 betreuerNameDisplay.textContent = user.username;
                                 renderParticipantList();
-                                // Admin-Link für Betreuungsleitung anzeigen
                                 if (adminLinkContainer) adminLinkContainer.classList.remove('hidden');
+                                if (alarmLinkContainer) alarmLinkContainer.classList.remove('hidden');
                                 showMessage(`Willkommen ${user.username} (Betreuungsleitung)`, false);
                             } else {
                                 adminContentScreen.classList.add('hidden');
@@ -1671,6 +1927,7 @@
                                 betreuerNameDisplay.textContent = user.username;
                                 renderParticipantList();
                                 if (adminLinkContainer) adminLinkContainer.classList.add('hidden');
+                                if (alarmLinkContainer) alarmLinkContainer.classList.remove('hidden');
                                 showMessage(`Willkommen ${user.username}`, false);
                             }
                         } else {
@@ -1691,9 +1948,34 @@
                 });
             }
             
+            // Alarm Panel Link
+            if (alarmPanelLink) {
+                alarmPanelLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showAlarmModal();
+                });
+            }
+            
             if (closeAdminOverlay) {
                 closeAdminOverlay.addEventListener('click', hideAdminOverlay);
             }
+            
+            // Alarm Modal Event Listeners
+            if (closeAlarmModal) closeAlarmModal.addEventListener('click', hideAlarmModal);
+            if (closeAlarmModalBottom) closeAlarmModalBottom.addEventListener('click', hideAlarmModal);
+            
+            if (statSignedinCard) statSignedinCard.addEventListener('click', showAllParticipants);
+            if (statPresentCard) statPresentCard.addEventListener('click', showPresentParticipants);
+            if (statMissingCard) statMissingCard.addEventListener('click', showMissingParticipants);
+            
+            document.querySelectorAll('.alarm-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const filter = btn.dataset.filter;
+                    if (filter === 'all') showAllParticipants();
+                    else if (filter === 'present') showPresentParticipants();
+                    else if (filter === 'missing') showMissingParticipants();
+                });
+            });
 
             addUserButton?.addEventListener('click', () => {
                 const name = newUsernameInput?.value.trim();
@@ -1786,7 +2068,7 @@
             
             confirmPickupFamily?.addEventListener('click', confirmFamilyPickup);
 
-            // Instructions Screen - repariert
+            // Instructions Screen
             const instructionsLink = document.getElementById('instructions-link');
             const closeInstructionsButton = document.getElementById('close-instructions');
             
@@ -1812,6 +2094,13 @@
                 if (target.classList?.contains('participant-action-button')) {
                     const pid = target.dataset.id;
                     const action = target.dataset.action;
+                    
+                    // Alarm toggle present
+                    if (action === 'toggle-present') {
+                        togglePresent(pid);
+                        return;
+                    }
+                    
                     const idx = participants.findIndex(p => p.id === pid);
                     if (idx === -1) return;
                     const p = participants[idx];
@@ -1832,6 +2121,8 @@
                             p.activityHistory.push({ type: 'Angemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt' });
                             showActionFeedback(`${p.name} angemeldet`, true);
                             saveParticipants();
+                            // Reset search field after action
+                            resetSearchAndFilter();
                         } else if (action === 'abmelden' && p.status === 'signedIn') {
                             if (!p.canGoHomeAlone) {
                                 currentParticipantBeingPickedUp = p;
@@ -1847,6 +2138,8 @@
                                 p.activityHistory.push({ type: 'Abgemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt', pickup: 'Alleine nach Hause' });
                                 showActionFeedback(`${p.name} abgemeldet`, false);
                                 saveParticipants();
+                                // Reset search field after action
+                                resetSearchAndFilter();
                             }
                         }
                     }
@@ -1976,6 +2269,8 @@
                         participants[idx].activityHistory.push({ type: 'Abgemeldet', time: new Date().toLocaleString('de-DE'), by: currentLoggedInUsername || 'Unbekannt', pickup: person });
                         showActionFeedback(`${currentParticipantBeingPickedUp.name} von ${person} abgeholt`, false);
                         saveParticipants();
+                        // Reset search field after action
+                        resetSearchAndFilter();
                     }
                 }
                 pickupModal.classList.add('hidden');
@@ -2071,6 +2366,7 @@
                 showAdminMessage(addParticipantManualMessage, `${first} ${last} hinzugefügt`, false);
                 document.getElementById('child1-first-name').value = '';
                 document.getElementById('child1-last-name').value = '';
+                renderParticipantList();
             });
 
             const addAndSignin = document.getElementById('add-and-signin-participant-button');
@@ -2149,6 +2445,7 @@
                         p.pickedUpBy = '';
                         p.activityHistory = [];
                         p.comments = [];
+                        p.present = false;
                     });
                     saveParticipants();
                     showMessage("Zurückgesetzt", false);
