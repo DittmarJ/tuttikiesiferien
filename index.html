@@ -504,6 +504,54 @@
         .alarm-search-input {
             margin-bottom: 1rem;
         }
+        
+        /* Hold Button Styles */
+        .hold-button-container {
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .hold-button {
+            background: rgba(255, 59, 48, 0.95);
+            border: none;
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+            padding: 1rem 2rem;
+            border-radius: 3rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hold-button:active {
+            transform: scale(0.98);
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: white;
+            transition: width 0.05s linear;
+        }
+        
+        .hold-text {
+            font-size: 0.875rem;
+            color: #6c6c70;
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -571,7 +619,23 @@
                 <p>Über den Info-Button können Details eingesehen und Kommentare hinzugefügt werden.</p>
                 <p>Bei vorhandenen Kommentaren erscheint ein C vor dem Info-Button.</p>
                 <p>Alle Änderungen werden automatisch gespeichert.</p>
-                <p>Bei einem Räumungsalarm kann die Anwesenheit der Kinder markiert werden.</p>
+                <p>Bei einem Räumungsalarm muss der Button 5 Sekunden gedrückt werden.</p>
+            </div>
+        </div>
+
+        <!-- Alarm Confirmation Modal (Hold Button) -->
+        <div id="alarm-confirm-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
+            <div class="modal-content p-6 w-full max-w-sm mx-4">
+                <h3 class="text-xl font-bold text-[#1d1d1f] mb-3 text-center">🚨 Räumungsalarm</h3>
+                <p class="text-center text-[#6c6c70] mb-4">Halten Sie den Button 5 Sekunden gedrückt, um den Alarm auszulösen.</p>
+                <div class="hold-button-container">
+                    <button id="hold-to-confirm-btn" class="hold-button">Alarm auslösen</button>
+                    <div class="progress-bar-container">
+                        <div id="hold-progress-bar" class="progress-bar"></div>
+                    </div>
+                    <p id="hold-timer-text" class="hold-text">0/5 Sekunden</p>
+                </div>
+                <button id="cancel-alarm-confirm" class="glass-button w-full mt-4 py-2 rounded-button">Abbrechen</button>
             </div>
         </div>
 
@@ -908,6 +972,14 @@
             const closeAdminOverlay = document.getElementById('close-admin-overlay');
             const adminOverlayContent = document.getElementById('admin-overlay-content');
             
+            // Alarm Confirmation Modal Elements
+            const alarmConfirmModal = document.getElementById('alarm-confirm-modal');
+            const holdToConfirmBtn = document.getElementById('hold-to-confirm-btn');
+            const holdProgressBar = document.getElementById('hold-progress-bar');
+            const holdTimerText = document.getElementById('hold-timer-text');
+            const cancelAlarmConfirm = document.getElementById('cancel-alarm-confirm');
+            
+            // Alarm Modal Elements
             const alarmModal = document.getElementById('alarm-modal');
             const closeAlarmModal = document.getElementById('close-alarm-modal');
             const closeAlarmModalBottom = document.getElementById('close-alarm-modal-bottom');
@@ -1050,6 +1122,12 @@
             var currentAlarmFilter = 'all';
             var currentAlarmSearchTerm = '';
             
+            // Hold button variables
+            var holdInterval = null;
+            var holdStartTime = 0;
+            var isHolding = false;
+            var alarmAudio = null;
+            
             var pendingFamilyAction = null;
             var familyMembersListData = [];
             var pendingFamilyPickupMembers = null;
@@ -1062,6 +1140,63 @@
 
             let users = [];
             let participants = [];
+
+            // Alarm Sound
+            function playAlarmSound() {
+                if (alarmAudio) {
+                    alarmAudio.pause();
+                    alarmAudio.currentTime = 0;
+                }
+                alarmAudio = new Audio('https://raw.githubusercontent.com/DittmarJ/tuttikiesiferien/main/Design%20ohne%20Titel.mp3');
+                alarmAudio.play().catch(e => console.log('Audio play failed:', e));
+            }
+
+            // Hold Button Functions
+            function startHold() {
+                if (isHolding) return;
+                isHolding = true;
+                holdStartTime = Date.now();
+                holdInterval = setInterval(updateHoldProgress, 50);
+            }
+            
+            function stopHold() {
+                if (!isHolding) return;
+                isHolding = false;
+                if (holdInterval) {
+                    clearInterval(holdInterval);
+                    holdInterval = null;
+                }
+                holdProgressBar.style.width = '0%';
+                holdTimerText.textContent = '0/5 Sekunden';
+            }
+            
+            function updateHoldProgress() {
+                const elapsed = (Date.now() - holdStartTime) / 1000;
+                const progress = Math.min(100, (elapsed / 5) * 100);
+                holdProgressBar.style.width = progress + '%';
+                holdTimerText.textContent = `${Math.min(5, elapsed).toFixed(1)}/5 Sekunden`;
+                
+                if (elapsed >= 5) {
+                    // Hold complete!
+                    stopHold();
+                    alarmConfirmModal.classList.add('hidden');
+                    // Play alarm sound
+                    playAlarmSound();
+                    // Open alarm modal
+                    showAlarmModal();
+                }
+            }
+            
+            function showAlarmConfirmModal() {
+                // Reset hold state
+                stopHold();
+                alarmConfirmModal.classList.remove('hidden');
+            }
+            
+            function hideAlarmConfirmModal() {
+                stopHold();
+                alarmConfirmModal.classList.add('hidden');
+            }
 
             function showMessage(message, isError = true) {
                 messageBox.textContent = message;
@@ -1104,7 +1239,6 @@
                 renderAlarmList();
             }
             
-            // Reset Teilnehmerverwaltung Formular (nur Kind 1 sichtbar)
             function resetParticipantManagementForm() {
                 if (child2Div) child2Div.classList.add('hidden');
                 if (child3Div) child3Div.classList.add('hidden');
@@ -1873,6 +2007,7 @@
                 if (participantDetailsModal) participantDetailsModal.classList.add('hidden');
                 if (adminOverlay) adminOverlay.classList.add('hidden');
                 if (alarmModal) alarmModal.classList.add('hidden');
+                if (alarmConfirmModal) alarmConfirmModal.classList.add('hidden');
                 if (loginScreen) loginScreen.classList.remove('hidden');
                 
                 enteredCode = '';
@@ -1884,6 +2019,7 @@
                 pendingFamilyAction = null;
                 familyMembersListData = [];
                 pendingFamilyPickupMembers = null;
+                stopHold();
                 
                 resetInactivityTimer();
             }
@@ -1968,17 +2104,32 @@
                 });
             });
 
+            // Alarm Panel Link - zeigt zuerst das Bestätigungs-Modal
             if (alarmPanelLink) {
                 alarmPanelLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    showAlarmModal();
+                    showAlarmConfirmModal();
                 });
             }
             
             if (navAlarmButton) {
                 navAlarmButton.addEventListener('click', () => {
-                    showAlarmModal();
+                    showAlarmConfirmModal();
                 });
+            }
+            
+            // Hold Button Event Listeners
+            if (holdToConfirmBtn) {
+                holdToConfirmBtn.addEventListener('mousedown', startHold);
+                holdToConfirmBtn.addEventListener('mouseup', stopHold);
+                holdToConfirmBtn.addEventListener('mouseleave', stopHold);
+                holdToConfirmBtn.addEventListener('touchstart', startHold);
+                holdToConfirmBtn.addEventListener('touchend', stopHold);
+                holdToConfirmBtn.addEventListener('touchcancel', stopHold);
+            }
+            
+            if (cancelAlarmConfirm) {
+                cancelAlarmConfirm.addEventListener('click', hideAlarmConfirmModal);
             }
             
             if (closeAdminOverlay) {
