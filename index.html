@@ -505,52 +505,63 @@
             margin-bottom: 1rem;
         }
         
-        /* Hold Button Styles */
-        .hold-button-container {
-            text-align: center;
-            padding: 1rem;
+        /* Runder Hold Button */
+        .circular-hold-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 1rem 0;
         }
         
-        .hold-button {
+        .circular-hold-btn {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
             background: rgba(255, 59, 48, 0.95);
             border: none;
-            color: white;
-            font-size: 1.25rem;
-            font-weight: 600;
-            padding: 1rem 2rem;
-            border-radius: 3rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            transition: transform 0.1s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .circular-hold-btn:active {
+            transform: scale(0.97);
+        }
+        
+        .circular-progress-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            margin-bottom: 1rem;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .hold-button:active {
-            transform: scale(0.98);
-        }
-        
-        .progress-bar-container {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-        
-        .progress-bar {
-            width: 0%;
             height: 100%;
-            background: white;
-            transition: width 0.05s linear;
+            border-radius: 50%;
+            pointer-events: none;
         }
         
-        .hold-text {
-            font-size: 0.875rem;
-            color: #6c6c70;
-            margin-top: 0.5rem;
+        .circular-progress-ring-circle {
+            transition: stroke-dashoffset 0.05s linear;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        .hold-time-text {
+            font-size: 1.8rem;
+            font-weight: bold;
+            z-index: 2;
+        }
+        
+        .hold-label-text {
+            font-size: 0.7rem;
+            opacity: 0.8;
+            z-index: 2;
         }
     </style>
 </head>
@@ -619,31 +630,34 @@
                 <p>Über den Info-Button können Details eingesehen und Kommentare hinzugefügt werden.</p>
                 <p>Bei vorhandenen Kommentaren erscheint ein C vor dem Info-Button.</p>
                 <p>Alle Änderungen werden automatisch gespeichert.</p>
-                <p>Bei einem Räumungsalarm muss der Button 5 Sekunden gedrückt werden.</p>
+                <p>Bei einem Räumungsalarm muss der rote Kreis 5 Sekunden gedrückt werden.</p>
+                <p>Nach dem Auslösen öffnet sich automatisch die Anwesenheitskontrolle für alle.</p>
             </div>
         </div>
 
-        <!-- Alarm Confirmation Modal (Hold Button) -->
+        <!-- Alarm Confirmation Modal (runder Button) -->
         <div id="alarm-confirm-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
             <div class="modal-content p-6 w-full max-w-sm mx-4">
                 <h3 class="text-xl font-bold text-[#1d1d1f] mb-3 text-center">🚨 Räumungsalarm</h3>
-                <p class="text-center text-[#6c6c70] mb-4">Halten Sie den Button 5 Sekunden gedrückt, um den Alarm auszulösen.</p>
-                <div class="hold-button-container">
-                    <button id="hold-to-confirm-btn" class="hold-button">Alarm auslösen</button>
-                    <div class="progress-bar-container">
-                        <div id="hold-progress-bar" class="progress-bar"></div>
-                    </div>
-                    <p id="hold-timer-text" class="hold-text">0/5 Sekunden</p>
+                <p class="text-center text-[#6c6c70] mb-4">Halten Sie den roten Kreis 5 Sekunden gedrückt, um den Alarm auszulösen.</p>
+                <div class="circular-hold-container">
+                    <button id="circular-hold-btn" class="circular-hold-btn">
+                        <svg class="circular-progress-ring" width="150" height="150" viewBox="0 0 150 150">
+                            <circle class="circular-progress-ring-circle" cx="75" cy="75" r="70" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="6" stroke-dasharray="439.82" stroke-dashoffset="0"/>
+                        </svg>
+                        <span id="hold-time-display" class="hold-time-text">0</span>
+                        <span class="hold-label-text">Sekunden</span>
+                    </button>
                 </div>
                 <button id="cancel-alarm-confirm" class="glass-button w-full mt-4 py-2 rounded-button">Abbrechen</button>
             </div>
         </div>
 
-        <!-- Alarm Modal -->
+        <!-- Alarm Modal (Anwesenheitskontrolle) -->
         <div id="alarm-modal" class="fixed inset-0 modal-glass flex items-center justify-center hidden z-50">
             <div class="modal-content p-5 w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-[#1d1d1f]">Räumungsalarm - Anwesenheitskontrolle</h2>
+                    <h2 class="text-xl font-bold text-[#1d1d1f]">🚨 Räumungsalarm - Anwesenheitskontrolle</h2>
                     <button id="close-alarm-modal" class="text-[#8e8e93] hover:text-[#1d1d1f] text-2xl leading-none">&times;</button>
                 </div>
                 
@@ -972,11 +986,10 @@
             const closeAdminOverlay = document.getElementById('close-admin-overlay');
             const adminOverlayContent = document.getElementById('admin-overlay-content');
             
-            // Alarm Confirmation Modal Elements
+            // Alarm Confirmation Modal Elements (runder Button)
             const alarmConfirmModal = document.getElementById('alarm-confirm-modal');
-            const holdToConfirmBtn = document.getElementById('hold-to-confirm-btn');
-            const holdProgressBar = document.getElementById('hold-progress-bar');
-            const holdTimerText = document.getElementById('hold-timer-text');
+            const circularHoldBtn = document.getElementById('circular-hold-btn');
+            const holdTimeDisplay = document.getElementById('hold-time-display');
             const cancelAlarmConfirm = document.getElementById('cancel-alarm-confirm');
             
             // Alarm Modal Elements
@@ -1121,12 +1134,15 @@
             var currentConfirmAction = null;
             var currentAlarmFilter = 'all';
             var currentAlarmSearchTerm = '';
+            var alarmActive = false; // Alarm-Modus aktiv?
             
             // Hold button variables
             var holdInterval = null;
             var holdStartTime = 0;
             var isHolding = false;
             var alarmAudio = null;
+            var progressCircle = null;
+            var circumference = 2 * Math.PI * 70; // 439.82
             
             var pendingFamilyAction = null;
             var familyMembersListData = [];
@@ -1151,6 +1167,14 @@
                 alarmAudio.play().catch(e => console.log('Audio play failed:', e));
             }
 
+            // Circular Progress Update
+            function updateCircularProgress(progress) {
+                if (progressCircle) {
+                    const offset = circumference - (progress / 100) * circumference;
+                    progressCircle.style.strokeDashoffset = offset;
+                }
+            }
+
             // Hold Button Functions
             function startHold() {
                 if (isHolding) return;
@@ -1166,15 +1190,15 @@
                     clearInterval(holdInterval);
                     holdInterval = null;
                 }
-                holdProgressBar.style.width = '0%';
-                holdTimerText.textContent = '0/5 Sekunden';
+                if (holdTimeDisplay) holdTimeDisplay.textContent = '0';
+                updateCircularProgress(0);
             }
             
             function updateHoldProgress() {
                 const elapsed = (Date.now() - holdStartTime) / 1000;
                 const progress = Math.min(100, (elapsed / 5) * 100);
-                holdProgressBar.style.width = progress + '%';
-                holdTimerText.textContent = `${Math.min(5, elapsed).toFixed(1)}/5 Sekunden`;
+                if (holdTimeDisplay) holdTimeDisplay.textContent = Math.min(5, elapsed).toFixed(1);
+                updateCircularProgress(progress);
                 
                 if (elapsed >= 5) {
                     // Hold complete!
@@ -1182,14 +1206,30 @@
                     alarmConfirmModal.classList.add('hidden');
                     // Play alarm sound
                     playAlarmSound();
+                    // Activate alarm mode
+                    alarmActive = true;
+                    // Initialize present status for all signed-in participants
+                    participants.forEach(p => {
+                        if (p.status === 'signedIn') {
+                            p.present = false;
+                        }
+                    });
+                    saveParticipants();
                     // Open alarm modal
                     showAlarmModal();
                 }
             }
             
             function showAlarmConfirmModal() {
+                if (alarmActive) {
+                    // If alarm is already active, directly show the alarm modal
+                    showAlarmModal();
+                    return;
+                }
                 // Reset hold state
                 stopHold();
+                if (holdTimeDisplay) holdTimeDisplay.textContent = '0';
+                updateCircularProgress(0);
                 alarmConfirmModal.classList.remove('hidden');
             }
             
@@ -1378,12 +1418,20 @@
                     p.present = false;
                 });
                 saveParticipants();
+                alarmActive = false;
                 renderAlarmList();
                 renderParticipantList();
-                showActionFeedback('Alle Anwesenheitsmarkierungen wurden zurückgesetzt', true);
+                hideAlarmModal();
+                showActionFeedback('Alarm wurde zurückgesetzt. Der Alarm-Modus ist beendet.', true);
             }
             
             function showAlarmModal() {
+                // Wenn der Alarm nicht aktiv ist, zuerst Bestätigung zeigen
+                if (!alarmActive) {
+                    showAlarmConfirmModal();
+                    return;
+                }
+                
                 participants.forEach(p => {
                     if (p.present === undefined) p.present = false;
                 });
@@ -2052,6 +2100,21 @@
                 }, INACTIVITY_LIMIT);
             }
 
+            // Initialize circular progress circle
+            function initCircularProgress() {
+                if (circularHoldBtn) {
+                    const svg = circularHoldBtn.querySelector('.circular-progress-ring');
+                    if (svg) {
+                        const circle = svg.querySelector('.circular-progress-ring-circle');
+                        if (circle) {
+                            progressCircle = circle;
+                            progressCircle.style.strokeDasharray = circumference;
+                            progressCircle.style.strokeDashoffset = circumference;
+                        }
+                    }
+                }
+            }
+
             // Event Listeners
             keypadButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -2104,7 +2167,7 @@
                 });
             });
 
-            // Alarm Panel Link - zeigt zuerst das Bestätigungs-Modal
+            // Alarm Panel Link - zeigt das Bestätigungs-Modal
             if (alarmPanelLink) {
                 alarmPanelLink.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -2118,14 +2181,14 @@
                 });
             }
             
-            // Hold Button Event Listeners
-            if (holdToConfirmBtn) {
-                holdToConfirmBtn.addEventListener('mousedown', startHold);
-                holdToConfirmBtn.addEventListener('mouseup', stopHold);
-                holdToConfirmBtn.addEventListener('mouseleave', stopHold);
-                holdToConfirmBtn.addEventListener('touchstart', startHold);
-                holdToConfirmBtn.addEventListener('touchend', stopHold);
-                holdToConfirmBtn.addEventListener('touchcancel', stopHold);
+            // Circular Hold Button Event Listeners
+            if (circularHoldBtn) {
+                circularHoldBtn.addEventListener('mousedown', startHold);
+                circularHoldBtn.addEventListener('mouseup', stopHold);
+                circularHoldBtn.addEventListener('mouseleave', stopHold);
+                circularHoldBtn.addEventListener('touchstart', startHold);
+                circularHoldBtn.addEventListener('touchend', stopHold);
+                circularHoldBtn.addEventListener('touchcancel', stopHold);
             }
             
             if (cancelAlarmConfirm) {
@@ -2623,6 +2686,7 @@
                         p.present = false;
                     });
                     saveParticipants();
+                    alarmActive = false;
                     showMessage("Zurückgesetzt", false);
                 });
             });
@@ -2636,6 +2700,8 @@
 
             ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(ev => document.addEventListener(ev, resetInactivityTimer, true));
 
+            // Initialize
+            initCircularProgress();
             loadUsers();
             loadParticipants();
             loadControlMode();
